@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>واحة ألعاب الأطفال الـ 24</title>
+    
+    <!-- SEO and PWA Metadata -->
+    <meta name="description" content="مجموعة من 24 لعبة تفاعلية، ملونة وسهلة للأطفال من عمر 3 إلى 6 سنوات. تعلم والعب بدون إنترنت!">
+    <meta name="theme-color" content="#E0F7FA">
+    <link rel="manifest" href="manifest.json">
+    <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23FF7F50%22/><text x=%2250%22 y=%2265%22 font-size=%2260%22 text-anchor=%22middle%22>🧸</text></svg>">
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Floating Back to Home button -->
+        <button class="back-btn" id="backBtn" style="display: none;" title="العودة للقائمة الرئيسية">🏠</button>
+
+        <!-- Main Header (Splash) -->
+        <header id="appHeader">
+            <div style="display: inline-block; width: 80px; height: 80px;"><img src="assets/emojis/1f9f8.svg" style="width: 100%; height: 100%;"></div>
+            <h1 class="app-title">واحة ألعاب الأطفال</h1>
+        </header>
+
+        <!-- Game Hub (Main Menu) -->
+        <main class="game-hub" id="gameHub">
+            <!-- Game cards are dynamically rendered here -->
+        </main>
+
+        <!-- Game Area (Active Arena) -->
+        <section class="game-area" id="gameArea">
+            <!-- Active game content is dynamically injected here -->
+        </section>
+    </div>
+
+    <!-- Audio Synthesizer Engine -->
+    <script src="js/audio.js?v=21"></script>
+
+    <!-- Individual Games Scripts -->
+    <script src="js/games/animals.js?v=45"></script>
+    <script src="js/games/coloring.js?v=45"></script>
+    <script src="js/games/balloons.js?v=45"></script>
+    <script src="js/games/memory.js?v=45"></script>
+    <script src="js/games/shapes.js?v=45"></script>
+    <script src="js/games/catch.js?v=45"></script>
+    <script src="js/games/piano.js?v=45"></script>
+    <script src="js/games/popit.js?v=64"></script>
+    <script src="js/games/odd-one.js?v=45"></script>
+    <script src="js/games/feed.js?v=45"></script>
+    <script src="js/games/shadow.js?v=45"></script>
+    <script src="js/games/counting.js?v=45"></script>
+    <script src="js/games/fireworks.js?v=45"></script>
+    <script src="js/games/dressup.js?v=45"></script>
+    <script src="js/games/tictactoe.js?v=45"></script>
+    <script src="js/games/whack.js?v=45"></script>
+    <script src="js/games/english-letters.js?v=45"></script>
+    <script src="js/games/arabic-letters.js?v=45"></script>
+    <script src="js/games/numbers.js?v=45"></script>
+    <script src="js/games/fruits.js?v=45"></script>
+    <script src="js/games/halves-puzzle.js?v=45"></script>
+    <script src="js/games/tangram-puzzle.js?v=45"></script>
+    <script src="js/games/girls-dressup.js?v=46"></script>
+    <script src="js/games/picture-puzzle.js?v=46"></script>
+    <script src="js/games/jump-game.js?v=46"></script>
+    <script src="js/games/math-game.js?v=46"></script>
+    <script src="js/games/missing-item.js?v=46"></script>
+    <script src="js/games/size-order.js?v=46"></script>
+    <script src="js/games/word-scramble.js?v=46"></script>
+    <script src="js/games/color-numbers.js?v=69"></script>
+    <script src="js/games/cooking-game.js?v=46"></script>
+    <script src="js/games/connect-dots.js?v=46"></script>
+    <script src="js/games/bird-hunting.js?v=47"></script>
+    <script src="js/games/fishing.js?v=47"></script>
+    <script src="js/games/block-blast.js?v=51"></script>
+    <script src="js/games/match-words.js?v=48"></script>
+    <script src="js/games/drums.js?v=48"></script>
+    <script src="js/games/car-race.js?v=48"></script>
+    <script src="js/games/brick-breaker.js?v=48"></script>
+    <script src="js/games/pacman.js?v=48"></script>
+    <script src="js/games/soccer.js?v=48"></script>
+    <script src="js/games/freeway.js?v=48"></script>
+    <script src="js/games/color-sort-water.js?v=48"></script>
+    <script src="js/games/hole-game.js?v=48"></script>
+    <script src="js/games/candy-match.js?v=48"></script>
+    <script src="js/games/wood-unblock.js?v=48"></script>
+    <script src="js/games/number-slide.js?v=48"></script>
+    <script src="js/games/ring-stacker.js?v=54"></script>
+    <script src="js/games/little-big-snake.js?v=55"></script>
+    <script src="js/games/bubble-shooter.js?v=56"></script>
+    <script src="js/games/bus-jam.js?v=62"></script>
+    <script src="js/games/pool.js?v=5"></script>
+    <script src="js/games/bus-shapes.js?v=1"></script>
+    <script src="js/games/laundry-sort.js?v=3"></script>
+    <script src="js/games/coin-sort.js?v=5"></script>
+    <script src="js/games/loop-drive.js?v=1"></script>
+    <script src="js/games/hammer-nails.js?v=1"></script>
+    <script src="js/games/arrow-target.js?v=1"></script>
+    <script src="js/games/space-shooter.js?v=1"></script>
+ 
+    <!-- Main Coordinator Script -->
+    <script src="js/main.js?v=53"></script>
+
+    <!-- Register PWA Service Worker & Debug Errors -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("خطأ برمجي (JS Error):\n" + message + "\nالملف: " + source + "\nالسطر: " + lineno);
+            return false;
+        };
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered!', reg))
+                    .catch(err => console.log('Service Worker registration failed: ', err));
+            });
+
+            // Automatically reload the page when the new Service Worker takes control
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

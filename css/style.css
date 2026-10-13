@@ -1,0 +1,1899 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Tajawal:wght@500;700;900&display=swap');
+
+:root {
+    --bg-sky: linear-gradient(180deg, #E0F7FA 0%, #FFF9C4 100%);
+    --font-kids: 'Fredoka', 'Tajawal', sans-serif;
+    --shadow-bubble: 0 8px 0 rgba(0, 0, 0, 0.15);
+    --shadow-active: 0 2px 0 rgba(0, 0, 0, 0.15);
+    
+    /* Playful Colors */
+    --color-red: #FF5252;
+    --color-orange: #FF7043;
+    --color-yellow: #FBC02D;
+    --color-green: #66BB6A;
+    --color-blue: #29B6F6;
+    --color-purple: #AB47BC;
+    --color-pink: #EC407A;
+}
+
+.game-svg-icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    display: inline-block;
+    pointer-events: none;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-kids);
+    background: var(--bg-sky);
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #37474F;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    direction: rtl; /* RTL default for Arabic */
+}
+
+/* App Container */
+.app-container {
+    width: 100%;
+    max-width: 400px; /* Enforces 400px width */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 15px 10px;
+}
+
+/* Header / Splash Screen */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+    animation: bounce 2s infinite ease-in-out;
+}
+
+.app-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #263238;
+    text-shadow: 2px 2px 0 #FFF, 4px 4px 0 #81D4FA;
+    margin-top: 10px;
+}
+
+/* Navigation Back Button - Compact Left Aligned */
+.back-btn {
+    position: absolute;
+    top: 25px;
+    left: 20px;
+    right: auto;
+    background-color: var(--color-red);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #D32F2F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: transform 0.1s;
+}
+
+.back-btn:active {
+    transform: translateY(3px);
+    box-shadow: none;
+}
+
+/* Main Hub */
+.game-hub {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.game-card {
+    border-radius: 20px;
+    padding: 15px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255,255,255,0.4);
+    box-shadow: var(--shadow-bubble);
+}
+
+.game-card:active {
+    transform: translateY(6px);
+    box-shadow: var(--shadow-active);
+}
+
+.game-card-emoji {
+    font-size: 3rem;
+    margin-bottom: 8px;
+    filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.1));
+}
+
+.game-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+}
+
+/* Game Area - Fixed 400x700 viewport */
+.game-area {
+    display: none;
+    width: 100%;
+    height: 700px; /* Fixed height */
+    background-color: rgba(255, 255, 255, 0.65);
+    border-radius: 25px;
+    border: 3px dashed rgba(255, 255, 255, 0.9);
+    padding: 15px 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(5px);
+    margin-top: 10px; /* Compact margin */
+    position: relative;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent spillover */
+}
+
+.game-title {
+    text-align: right;
+    font-size: 1.25rem;
+    font-weight: 900;
+    margin-bottom: 2px;
+    color: #37474F;
+    padding-left: 50px; /* Space for home button */
+    padding-right: 5px;
+}
+
+.game-instructions {
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #546E7A;
+    margin-bottom: 8px;
+    padding-left: 50px; /* Space for home button */
+    padding-right: 5px;
+}
+
+/* Common Layout Elements */
+.canvas-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+canvas {
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    border: 3px solid #CFD8DC;
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+}
+
+/* Bubbly Buttons */
+.menu-btn {
+    font-family: var(--font-kids);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    background-color: var(--color-green);
+    border: none;
+    border-radius: 50px;
+    padding: 12px 25px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #388E3C;
+    transition: transform 0.1s;
+    outline: none;
+    display: block;
+}
+
+.menu-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+/* Modals */
+.game-modal {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    border-radius: 22px;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.game-modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #FFFFFF;
+    border-radius: 25px;
+    padding: 30px 20px;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    border: 4px solid var(--color-yellow);
+}
+
+.modal-content h3 {
+    font-size: 1.5rem;
+    color: #37474F;
+    margin-bottom: 10px;
+}
+
+.modal-content p {
+    font-size: 1.05rem;
+    color: #78909C;
+    margin-bottom: 20px;
+}
+
+.restart-btn {
+    margin: 0 auto;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 1: Animals Sounds styling */
+.animals-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.animal-card {
+    border-radius: 18px;
+    padding: 12px 5px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.15), 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.animal-emoji {
+    font-size: 2.8rem;
+    margin-bottom: 5px;
+}
+
+.animal-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.2);
+}
+
+.bubble-text {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background-color: white;
+    color: #37474F;
+    border-radius: 15px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border: 2px solid var(--color-yellow);
+    z-index: 5;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    white-space: nowrap;
+}
+
+.bubble-text.show-bubble {
+    transform: translateX(-50%) scale(1);
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 2: Coloring Book styling */
+.templates-select {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 12px;
+    gap: 5px;
+}
+
+.template-btn {
+    font-family: var(--font-kids);
+    background-color: white;
+    border: 2px solid #CFD8DC;
+    border-radius: 30px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.template-btn.active {
+    background-color: var(--color-pink);
+    color: white;
+    border-color: var(--color-pink);
+}
+
+.palette-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+    align-items: center;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #FFF;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+}
+
+.color-swatch.active {
+    transform: scale(1.25);
+    border-color: #263238;
+}
+
+.templates-grid-screen {
+    width: 100%;
+    margin-top: 10px;
+}
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 15px;
+    padding: 10px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+.template-card {
+    background: white;
+    border: 3.5px solid #CFD8DC;
+    border-radius: 20px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+.template-card:hover {
+    transform: scale(1.05);
+    border-color: var(--color-pink);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+.workspace-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.back-to-templates-btn {
+    font-family: var(--font-kids);
+    font-size: 0.95rem;
+    padding: 8px 16px;
+}
+.current-template-name {
+    font-family: var(--font-kids);
+    color: #455A64;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.clear-btn {
+    font-family: var(--font-kids);
+    background-color: #78909C;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #546E7A;
+}
+
+.clear-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 3: Balloon Pop styling */
+.game-hud {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #37474F;
+    background-color: rgba(255,255,255,0.8);
+    padding: 8px 15px;
+    border-radius: 30px;
+    align-items: center;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 4: Memory Matching styling */
+.memory-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 15px auto 0;
+    max-width: 340px;
+}
+
+.memory-card {
+    aspect-ratio: 1 / 1;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+    transform-style: preserve-3d;
+}
+
+.memory-card.flip .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-front {
+    background-color: var(--color-blue);
+    color: white;
+    border: 3px solid #FFF;
+}
+
+.card-back {
+    background-color: white;
+    transform: rotateY(180deg);
+    border: 3px solid var(--color-orange);
+}
+
+.memory-card.matched .card-inner {
+    animation: matchPulse 0.5s ease-out;
+}
+
+.memory-card.matched .card-back {
+    background-color: #E8F5E9;
+    border-color: var(--color-green);
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 5: Shape Matcher styling */
+.shapes-game-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    min-height: 330px;
+    gap: 15px;
+}
+
+.shapes-palette, .shapes-slots {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 48%;
+}
+
+.draggable-wrapper {
+    height: 52px;
+    position: relative;
+}
+
+.draggable-shape {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    transition: transform 0.1s;
+    touch-action: none;
+    background-color: transparent;
+    border: none;
+}
+
+.draggable-shape.dragging {
+    cursor: grabbing;
+    transform: scale(1.2);
+}
+
+.draggable-shape.matched-shape {
+    border: none !important;
+    background-color: transparent !important;
+    cursor: default;
+    pointer-events: none;
+}
+
+.shape-char {
+    font-size: 2.2rem;
+}
+
+.shape-slot {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 10px;
+    position: relative;
+    background-color: transparent;
+    border: none;
+}
+
+.shape-slot-silhouette {
+    font-size: 2rem;
+    opacity: 0.25;
+    filter: grayscale(1);
+}
+
+.shape-slot-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #78909C;
+}
+
+.slot-filled {
+    border: 2px solid #81C784;
+    background-color: #E8F5E9;
+}
+
+.slot-filled .shape-slot-label {
+    display: none;
+}
+
+.slot-filled .shape-slot-silhouette {
+    display: none;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 7: Kids Piano styling */
+.instrument-selector {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.inst-btn {
+    font-family: var(--font-kids);
+    background-color: white;
+    border: 2px solid #CFD8DC;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.inst-btn.active {
+    background-color: var(--color-orange);
+    color: white;
+    border-color: var(--color-orange);
+    box-shadow: 0 3px 0 #E64A19;
+}
+
+.piano-board {
+    display: flex;
+    justify-content: center;
+    height: 250px;
+    width: 100%;
+    background-color: #37474F;
+    padding: 10px;
+    border-radius: 15px;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.piano-key {
+    flex: 1;
+    margin: 0 3px;
+    border-radius: 0 0 10px 10px;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 15px;
+    overflow: hidden;
+}
+
+.piano-key.key-active {
+    transform: translateY(6px);
+    box-shadow: none;
+}
+
+.key-char {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    filter: grayscale(0.2);
+}
+
+.key-name {
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.floating-note {
+    position: absolute;
+    font-size: 2rem;
+    pointer-events: none;
+    z-index: 10;
+    animation: floatNote 1.2s forwards ease-out;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 8: Pop It styling */
+.popit-board-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+}
+
+.popit-board {
+    background-color: #ECEFF1;
+    border: 8px solid #CFD8DC;
+    border-radius: 25px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    perspective: 1000px;
+}
+
+.popit-row {
+    display: flex;
+    gap: 8px;
+}
+
+.popit-bubble {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s ease;
+    position: relative;
+}
+
+.bubble-inner {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.4);
+}
+
+.popit-bubble.popped .bubble-inner {
+    background-color: rgba(0, 0, 0, 0.1);
+    box-shadow: inset 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.pop-active {
+    animation: bubblePopEffect 0.15s ease-out;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 9: Odd One Out styling */
+.oddone-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    max-width: 320px;
+    margin: 20px auto 0;
+}
+
+.oddone-card {
+    aspect-ratio: 1 / 1;
+    background-color: white;
+    border: 4px solid #CFD8DC;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.oddone-card:active {
+    transform: scale(0.95);
+}
+
+.oddone-emoji {
+    font-size: 3.5rem;
+}
+
+.oddone-card.correct {
+    border-color: var(--color-green);
+    background-color: #E8F5E9;
+}
+
+.level-indicator {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #455A64;
+    margin-bottom: 5px;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 10: Feed the Animal styling */
+.animal-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px 0;
+    position: relative;
+    min-height: 160px;
+    justify-content: center;
+}
+
+.animal-display {
+    font-size: 5.5rem;
+    transition: transform 0.3s;
+}
+
+.feed-speech-bubble {
+    background-color: white;
+    border: 3px solid var(--color-yellow);
+    border-radius: 20px;
+    padding: 8px 15px;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    position: relative;
+    max-width: 250px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.feed-speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 10px 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent var(--color-yellow) transparent;
+}
+
+.food-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.food-card {
+    background-color: white;
+    border: 3px solid #CFD8DC;
+    border-radius: 18px;
+    padding: 10px 15px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.1s, border-color 0.1s;
+    position: relative;
+}
+
+.wrong-indicator-x {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 50;
+    animation: bounce-anim 0.3s ease-out;
+}
+
+.food-card:active {
+    transform: scale(0.92);
+}
+
+.food-emoji {
+    font-size: 2.8rem;
+    margin-bottom: 4px;
+}
+
+.food-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #546E7A;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 11: Shadow Matcher styling */
+.shadow-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 140px;
+    margin: 15px 0;
+}
+
+.shadow-display {
+    font-size: 5.5rem;
+}
+
+.shadow-choices {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    max-width: 320px;
+    margin: 15px auto 0;
+}
+
+.shadow-card {
+    aspect-ratio: 1 / 1;
+    background-color: white;
+    border: 4px solid #CFD8DC;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+    transition: transform 0.1s;
+}
+
+.shadow-card:active {
+    transform: scale(0.95);
+}
+
+.shadow-card.correct {
+    border-color: var(--color-green);
+    background-color: #E8F5E9;
+}
+
+.shadow-choice-emoji {
+    font-size: 3.2rem;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 12: Counting Game styling */
+.counting-stage {
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.counting-items-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    max-width: 320px;
+}
+
+.counting-item {
+    font-size: 3.5rem;
+}
+
+.counting-numbers {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.number-card {
+    width: 55px;
+    height: 55px;
+    border-radius: 15px;
+    background-color: white;
+    border: 3px solid #CFD8DC;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #37474F;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: all 0.1s;
+}
+
+.number-card:active {
+    transform: scale(0.9);
+}
+
+.number-card.correct {
+    background-color: var(--color-green);
+    border-color: var(--color-green);
+    color: white;
+    box-shadow: 0 4px 0 #388E3C;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 14: Dress Up Teddy styling */
+.dressup-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 220px;
+    margin: 10px 0;
+}
+
+.teddy-container {
+    width: 150px;
+    height: 150px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.teddy-body {
+    font-size: 8rem;
+    z-index: 10;
+}
+
+.accessory-overlay {
+    position: absolute;
+    font-size: 4rem;
+    z-index: 20;
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hat-overlay {
+    font-size: 4.5rem;
+}
+
+.glass-overlay {
+    font-size: 3.5rem;
+    z-index: 15;
+}
+
+.neck-overlay {
+    font-size: 3.2rem;
+    z-index: 12;
+}
+
+.dressup-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(255,255,255,0.7);
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 2px solid #FFF;
+}
+
+.dress-btn {
+    font-family: var(--font-kids);
+    background-color: var(--color-blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #0288D1;
+}
+
+.dress-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.dress-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #546E7A;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 15: Kids Tic-Tac-Toe styling */
+.xo-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 300px;
+    margin: 20px auto;
+    background-color: #CFD8DC;
+    padding: 10px;
+    border-radius: 20px;
+}
+
+.xo-cell {
+    aspect-ratio: 1 / 1;
+    background-color: white;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    cursor: pointer;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.05);
+}
+
+.xo-cell.player-cell {
+    background-color: #FFFDE7;
+}
+
+.xo-cell.robot-cell {
+    background-color: #E8EAF6;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 16: Whack-a-Mole styling */
+.whack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    max-width: 320px;
+    margin: 20px auto 0;
+}
+
+.whack-hole {
+    aspect-ratio: 1 / 1;
+    background-color: #2d1a12; /* Deep dark dirt hole */
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    border: 5px solid #8d6e63; /* Dirt ring border */
+    box-shadow: inset 0 10px 0 rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.whack-mole {
+    font-size: 4.2rem; /* Much larger rabbit! */
+    position: absolute;
+    left: 50%;
+    bottom: -80px; /* Fully hidden when down */
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: bottom 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10;
+}
+
+.whack-mole.up {
+    bottom: 5px; /* Pops out of the hole beautifully */
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 17 & 18: English & Arabic Letters styling */
+.letter-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px 0;
+    min-height: 180px;
+    justify-content: center;
+}
+
+.letter-display {
+    font-size: 6rem;
+    font-weight: 900;
+    color: var(--color-purple);
+    text-shadow: 3px 3px 0px #FFF, 5px 5px 0px rgba(0,0,0,0.1);
+    background-color: white;
+    border: 4px dashed var(--color-purple);
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 25px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+}
+
+.letter-speech-bubble {
+    background-color: white;
+    border: 3px solid var(--color-blue);
+    border-radius: 20px;
+    padding: 8px 15px;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    position: relative;
+    max-width: 250px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.letter-speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 10px 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent var(--color-blue) transparent;
+}
+
+.letter-choices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.letter-choice-card {
+    background-color: white;
+    border: 3px solid #CFD8DC;
+    border-radius: 18px;
+    padding: 10px 5px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.letter-choice-card:active {
+    transform: scale(0.92);
+}
+
+.letter-choice-card.correct {
+    border-color: var(--color-green);
+    background-color: #E8F5E9;
+}
+
+.letter-choice-emoji {
+    font-size: 3rem;
+    margin-bottom: 4px;
+}
+
+.letter-choice-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #546E7A;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 20: Fruits Bubble Pop styling */
+.fruit-bubble-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 120px;
+    margin: 10px 0;
+}
+
+.fruit-target-prompt {
+    font-size: 5rem;
+    animation: bounce 2s infinite ease-in-out;
+}
+
+.fruit-bubble-choices {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 280px;
+    margin: 20px auto 0;
+}
+
+.fruit-pop-bubble {
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 4px solid;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: inset 0 -4px 6px rgba(0,0,0,0.1), 0 6px 12px rgba(0,0,0,0.1);
+    transition: transform 0.1s, opacity 0.2s;
+    position: relative;
+}
+
+.fruit-pop-bubble::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 15%;
+    width: 25%;
+    height: 25%;
+    background-color: rgba(255,255,255,0.4);
+    border-radius: 50%;
+}
+
+.fruit-bubble-emoji {
+    font-size: 3.2rem;
+    filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.08));
+}
+
+.fruit-pop-bubble.popped {
+    opacity: 0;
+    transform: scale(1.3);
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 21: Halves Match Puzzle styling */
+.halves-game-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 320px;
+    gap: 15px;
+    direction: ltr;
+}
+
+.halves-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.halves-palette {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.half-slot-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.half-part {
+    width: 45px;
+    height: 90px;
+    overflow: hidden;
+    position: relative;
+    border: 3.5px solid #CFD8DC;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.left-part {
+    border-radius: 18px 0 0 18px;
+    border-right: none;
+}
+
+.right-part {
+    border-radius: 0 18px 18px 0;
+    border-left: none;
+}
+
+.half-emoji-content {
+    font-size: 78px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    line-height: 1;
+}
+
+.left-align {
+    left: 0px;
+}
+
+.right-align {
+    left: -45px;
+}
+
+.half-slot-target {
+    width: 45px;
+    height: 90px;
+    border: 3px dashed #B0BEC5;
+    border-radius: 0 18px 18px 0;
+    background-color: rgba(236, 239, 241, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slot-dotted-outline {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #B0BEC5;
+}
+
+.half-drag-wrapper {
+    width: 45px;
+    height: 90px;
+    position: relative;
+}
+
+.draggable-half {
+    cursor: grab;
+    touch-action: none;
+}
+
+.draggable-half.dragging {
+    cursor: grabbing;
+    transform: scale(1.1);
+}
+
+.draggable-half.matched-half {
+    border: none !important;
+    background-color: transparent !important;
+    cursor: default;
+    pointer-events: none;
+}
+
+.half-part-completed {
+    width: 90px;
+    height: 90px;
+    border: 3.5px solid #4CAF50; /* Green completed border */
+    background-color: #E8F5E9; /* Light green background */
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+    animation: bounce-anim 0.4s ease-out;
+}
+
+.slot-matched {
+    border: none !important;
+    background-color: transparent !important;
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 22: Real House Puzzle styling */
+.house-puzzle-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+}
+
+.house-board {
+    width: 290px;
+    height: 240px;
+    background: linear-gradient(180deg, #E3F0FF 0%, #F0F8FF 100%);
+    border: 4px solid #CFD8DC;
+    border-radius: 20px;
+    position: relative;
+    box-shadow: inset 0 4px 8px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+.house-outline-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.house-drop-zone {
+    position: absolute;
+    z-index: 2;
+    cursor: default;
+}
+
+.house-placed-piece {
+    transition: opacity 0.3s ease;
+}
+
+.house-palette {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 0;
+}
+
+.house-piece-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    transition: transform 0.15s ease, opacity 0.2s;
+}
+
+.house-piece-wrapper:active {
+    cursor: grabbing;
+    transform: scale(1.12);
+}
+
+.house-piece-svg {
+    width: 72px;
+    height: 60px;
+    display: block;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.18));
+    border-radius: 10px;
+}
+
+.house-piece-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #546E7A;
+    text-align: center;
+}
+
+.house-drag-clone {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.88;
+    transition: none;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.3));
+}
+
+
+/* ------------------------------------------------------------- */
+/* GAME 24: Feed the Baby styling */
+.baby-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px 0;
+    min-height: 170px;
+    justify-content: center;
+    position: relative;
+}
+
+.baby-display {
+    font-size: 6rem;
+    transition: transform 0.3s;
+}
+
+.baby-speech-bubble {
+    background-color: white;
+    border: 3px solid var(--color-orange);
+    border-radius: 20px;
+    padding: 8px 15px;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    position: relative;
+    max-width: 250px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.baby-speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 10px 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent var(--color-orange) transparent;
+}
+
+.baby-feeding-zone {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+    height: 40px;
+    position: relative;
+}
+
+.baby-mouth-target {
+    width: 80px;
+    height: 40px;
+    border: 2px dashed #B0BEC5;
+    border-radius: 20px;
+    background-color: rgba(236, 239, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.baby-mouth-target::after {
+    content: '👄';
+    font-size: 1.3rem;
+    opacity: 0.3;
+}
+
+.bottle-palette {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.bottle-wrapper {
+    width: 70px;
+    height: 70px;
+    position: relative;
+}
+
+.draggable-bottle {
+    font-size: 4rem;
+    cursor: grab;
+    touch-action: none;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.draggable-bottle.dragging {
+    cursor: grabbing;
+    transform: scale(1.15) rotate(-15deg);
+}
+
+/* ------------------------------------------------------------- */
+/* GAME 23: Girls Dress Up (Checkered Layout) styling */
+.poki-style-dressup-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 500px;
+    background-color: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    direction: ltr; /* Left-to-right split: Preview on Left, Wardrobe on Right */
+}
+
+.poki-model-panel {
+    width: 40%;
+    height: 100%;
+    position: relative;
+    background-color: #fff9f6;
+    overflow: hidden;
+    border-right: 4px solid #f2e3ff;
+}
+
+.room-background.grid-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background-color: #fffaf7;
+    background-image: 
+        linear-gradient(90deg, rgba(255, 128, 171, 0.12) 1px, transparent 1px),
+        linear-gradient(rgba(255, 128, 171, 0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.avatar-render-stage {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 330px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-render-stage svg {
+    overflow: visible;
+}
+
+.poki-wardrobe-drawer {
+    width: 60%;
+    height: 100%;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
+
+.dressup-top-bar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #fae8ff;
+    border-bottom: 3px solid #ffccd9;
+    padding: 8px 12px;
+    height: 64px;
+    width: 100%;
+}
+
+.category-tab-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 3px solid #ff4081;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.15s, background-color 0.15s;
+    box-shadow: 0 3px 0 rgba(255, 64, 129, 0.2);
+    outline: none;
+}
+
+.category-tab-btn:active {
+    transform: scale(0.92);
+}
+
+.category-tab-btn.active {
+    border-color: #d81b60;
+    background-color: #ffe8f2;
+    transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(255, 64, 129, 0.5);
+}
+
+.poki-subcategory-header {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.sub-tab-btn {
+    font-family: var(--font-kids);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #d81b60;
+    background-color: #ffffff;
+    border: 2px solid #ff80ab;
+    border-radius: 14px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    outline: none;
+}
+
+.sub-tab-btn.active {
+    color: #ffffff;
+    background-color: #ff80ab;
+    box-shadow: 0 3px 0 #d81b60;
+}
+
+.poki-items-grid-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+}
+
+.poki-items-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.poki-item-card {
+    aspect-ratio: 1 / 1;
+    background-color: #faf5ff;
+    border: 3px solid #f3e5f5;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s, border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.02);
+}
+
+.poki-item-card:active {
+    transform: scale(0.92);
+}
+
+.poki-item-card.selected {
+    border-color: #ff4081;
+    background-color: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 64, 129, 0.3);
+}
+
+.poki-item-card .heart-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    font-size: 0.95rem;
+    display: none;
+}
+
+.poki-item-card.selected .heart-badge {
+    display: block;
+}
+
+.mini-svg-preview {
+    width: 85%;
+    height: 85%;
+}
+
+.mini-color-circle {
+    width: 55%;
+    height: 55%;
+    border-radius: 50%;
+    border: 2.5px solid #eeeeee;
+}
+
+.dressup-colors-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background-color: #fcfcfc;
+    border-top: 3px solid #fae8ff;
+    width: 100%;
+    height: 60px;
+    align-items: center;
+}
+
+.color-swatch-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px; /* Rounded squares */
+    cursor: pointer;
+    border: 3px solid #eeeeee;
+    transition: transform 0.1s, border-color 0.15s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.color-swatch-box:active {
+    transform: scale(0.9);
+}
+
+.color-swatch-box.selected {
+    transform: scale(1.15);
+    border-color: #ff4081;
+    box-shadow: 0 0 6px rgba(255, 64, 129, 0.5);
+}
+
+/* Wide Mode Viewport adjustments */
+.app-container.wide-mode {
+    max-width: 800px;
+    transition: max-width 0.4s ease;
+}
+
+.app-container.wide-mode .game-area {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 3px dashed #ff4081;
+    padding: 10px;
+    min-height: 520px;
+}
+
+/* ------------------------------------------------------------- */
+/* ANIMATIONS */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.bounce-anim {
+    animation: bounceEffect 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bounceEffect {
+    0% { transform: scale(0.5); }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+.shake-anim {
+    animation: shakeEffect 0.5s ease-in-out;
+}
+
+@keyframes shakeEffect {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+
+@keyframes floatNote {
+    0% {
+        transform: translateY(0) scale(0.6) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-80px) scale(1.1) rotate(20deg);
+        opacity: 0;
+    }
+}
+
+@keyframes bubblePopEffect {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.8); }
+    100% { transform: scale(0.92); }
+}
+
+@keyframes matchPulse {
+    0% { transform: rotateY(180deg) scale(1); }
+    50% { transform: rotateY(180deg) scale(1.2); }
+    100% { transform: rotateY(180deg) scale(1); }
+}
+
+/* Landscape warning / Orientation styling */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .app-container {
+        max-width: 100%;
+        padding: 5px;
+    }
+    .game-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
