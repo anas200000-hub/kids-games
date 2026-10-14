@@ -7,7 +7,7 @@
         let score = 0;
         let levelNailsHit = 0;
         const targetNails = 5; // Hit 5 nails to win/advance level
-        let speed = 2.0;       // Plank sliding speed
+        let speed = 1.0;       // Plank sliding speed (تقليل السرعة إلى النصف)
         let level = 1;
 
         // Wooden board plank position
@@ -37,8 +37,8 @@
                     <div style="font-weight: bold; color: #1565C0; font-size: 14px;">المسامير: <span id="hnProgress">0/5</span></div>
                 </div>
 
-                <div style="position: relative; background: #FFF9C4; border-radius: 24px; border: 4px solid #F57F17; box-shadow: 0 8px 16px rgba(0,0,0,0.2); width: 380px; height: 380px; box-sizing: border-box; overflow: hidden;">
-                    <canvas id="hnCanvas" width="372" height="372" style="display: block; border-radius: 20px;"></canvas>
+                <div style="position: relative; background: #FFFFFF; border-radius: 24px; border: 4px solid #B0BEC5; box-shadow: 0 8px 16px rgba(0,0,0,0.1); width: 380px; height: 380px; box-sizing: border-box; overflow: hidden;">
+                    <canvas id="hnCanvas" width="372" height="372" style="display: block; border-radius: 20px; background: #FFFFFF;"></canvas>
                 </div>
 
                 <!-- Touch target message -->
@@ -101,8 +101,8 @@
             winModal.style.display = 'none';
             failModal.style.display = 'none';
 
-            // Increase speed based on level
-            speed = 2.0 + level * 0.45;
+            // Increase speed based on level (reduced to half)
+            speed = 1.0 + level * 0.22;
 
             // Pre-spawn first few nails
             for (let i = 0; i < targetNails; i++) {
@@ -262,21 +262,9 @@
                 ctx.translate(dx, dy);
             }
 
-            // Draw sunburst background matching user graphic
-            ctx.fillStyle = '#FFF9C4';
+            // Draw clean pure white background
+            ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.fillStyle = 'rgba(251, 192, 45, 0.22)';
-            for (let i = 0; i < 18; i++) {
-                ctx.beginPath();
-                ctx.moveTo(0,0);
-                ctx.arc(0, 0, 300, (i * Math.PI) / 9, ((i + 0.5) * Math.PI) / 9);
-                ctx.closePath();
-                ctx.fill();
-            }
-            ctx.restore();
 
             // Draw Wooden Board Plank
             ctx.fillStyle = '#A1887F';
@@ -313,36 +301,93 @@
                 }
             });
 
-            // Draw Hammer (Steel head + Wood handle)
+            // Draw Clean, Proportionate Cartoon Hammer
             ctx.save();
-            ctx.translate(hammerX, hammerY);
+            // The hammer pivots from its handle base (back end)
+            // Idle angle is tilted back (-45 deg), striking angle hits flat down onto the nail at hammerX
+            ctx.translate(hammerX - 85, hammerY);
             ctx.rotate(hammerAngle);
 
-            // Hammer Handle (Wood)
-            ctx.fillStyle = '#8D6E63'; // Brown handle
+            // 1. Grip Cap (Bottom of handle)
+            ctx.fillStyle = '#4E342E';
             ctx.beginPath();
-            ctx.roundRect(-70, -4, 60, 8, 3);
+            ctx.roundRect(-4, -6.5, 14, 13, 4);
             ctx.fill();
 
-            // Steel Hammer Head
-            ctx.fillStyle = '#CFD8DC'; // Light steel
+            // 2. Rubber Grip
+            ctx.fillStyle = '#6D4C41';
             ctx.beginPath();
-            ctx.roundRect(-10, -18, 22, 14, 2); // Body
+            ctx.roundRect(8, -6, 28, 12, 3);
             ctx.fill();
 
-            // Hammer claw side
+            // Grip ridges
+            ctx.fillStyle = '#4E342E';
+            for (let gx = 13; gx <= 31; gx += 5) {
+                ctx.fillRect(gx, -5.5, 2, 11);
+            }
+
+            // 3. Wooden Shaft (straight, centered)
+            ctx.fillStyle = '#A16B58';
+            ctx.beginPath();
+            ctx.roundRect(34, -5, 52, 10, 2);
+            ctx.fill();
+
+            // Wood highlight streak
+            ctx.fillStyle = '#BCAAA4';
+            ctx.fillRect(36, -3, 48, 2.5);
+
+            // 4. Steel Collar / Neck (where handle enters hammer head)
+            ctx.fillStyle = '#37474F';
+            ctx.beginPath();
+            ctx.roundRect(82, -5.5, 8, 11, 2);
+            ctx.fill();
+
+            // 5. Steel Hammer Head (Positioned at x = 90) - Dark Cast Steel
+            // Head Eye / Central Socket
+            ctx.fillStyle = '#455A64';
+            ctx.beginPath();
+            ctx.roundRect(86, -11, 14, 22, 3);
+            ctx.fill();
+
+            // Striking Neck & Face (Pointing Downwards toward the nail: y > 0)
+            // Striking neck
+            ctx.fillStyle = '#546E7A';
+            ctx.beginPath();
+            ctx.roundRect(87.5, 10, 11, 8, 2);
+            ctx.fill();
+
+            // Striking Face (the impact surface that hits the nail head)
+            ctx.fillStyle = '#78909C';
+            ctx.beginPath();
+            ctx.roundRect(85.5, 18, 15, 6, 2.5);
+            ctx.fill();
+
+            // Striking face highlight
             ctx.fillStyle = '#B0BEC5';
+            ctx.fillRect(87, 19, 12, 2);
+
+            // 6. Curved Claw (Back of the head: y < 0, curving upwards/backwards)
+            ctx.fillStyle = '#37474F';
             ctx.beginPath();
-            ctx.moveTo(-10, -14);
-            ctx.quadraticCurveTo(-26, -10, -32, 6);
-            ctx.lineTo(-24, 6);
-            ctx.quadraticCurveTo(-20, -6, -10, -6);
+            ctx.moveTo(86, -10);
+            ctx.quadraticCurveTo(84, -26, 70, -28); // Curve outward/back
+            ctx.quadraticCurveTo(80, -23, 91, -16);
+            ctx.lineTo(100, -10);
             ctx.closePath();
             ctx.fill();
 
-            // Hammer face side (striker)
-            ctx.fillStyle = '#ECEFF1';
-            ctx.fillRect(12, -18, 5, 14);
+            // Claw highlight
+            ctx.strokeStyle = '#90A4AE';
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(87, -11);
+            ctx.quadraticCurveTo(85, -25, 72, -27);
+            ctx.stroke();
+
+            // Steel central socket highlight
+            ctx.fillStyle = '#78909C';
+            ctx.fillRect(89, -8, 8, 2.5);
 
             ctx.restore();
 

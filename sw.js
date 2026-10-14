@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-games-cache-v109';
+const CACHE_NAME = 'kids-games-cache-v112';
 const ASSETS = [
     './',
     'index.html',
@@ -65,6 +65,7 @@ const ASSETS = [
     'js/games/hammer-nails.js',
     'js/games/arrow-target.js',
     'js/games/space-shooter.js',
+    'js/games/game-2048.js',
     'assets/images/snake_card.png',
     'assets/images/bus_card.png',
     'assets/images/pool_card.png',

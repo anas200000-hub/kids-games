@@ -25,10 +25,10 @@
             {
                 label: 'الكرات',
                 items: [
-                    { emoji: '⚾', label: 'كرة بيسبول', size: 1 },
-                    { emoji: '⚽', label: 'كرة قدم', size: 2 },
-                    { emoji: '🏀', label: 'كرة سلة', size: 3 },
-                    { emoji: '🎱', label: 'كرة بلياردو', size: 2 },
+                    { emoji: '🎱', label: 'كرة بلياردو', size: 1 },
+                    { emoji: '⚾', label: 'كرة بيسبول', size: 2 },
+                    { emoji: '⚽', label: 'كرة قدم', size: 3 },
+                    { emoji: '🏀', label: 'كرة سلة', size: 4 },
                 ]
             },
             {
@@ -116,11 +116,12 @@
             round.items.forEach((_, i) => {
                 const slot = document.createElement('div');
                 slot.dataset.slot = i;
-                slot.style.cssText = 'width:70px;height:80px;border:3px dashed #90CAF9;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,0.5);';
+                slot.style.cssText = 'width:70px;height:80px;border:3px dashed #90CAF9;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;';
                 const num = document.createElement('div');
                 num.innerText = i+1;
                 num.style.cssText = 'font-size:11px;color:#90CAF9;font-weight:bold;margin-bottom:2px;';
                 slot.appendChild(num);
+                slot.addEventListener('click', () => removeSlot(i));
                 slotsArea.appendChild(slot);
             });
 
@@ -131,12 +132,46 @@
                 const btn = document.createElement('button');
                 btn.dataset.size = item.size;
                 btn.dataset.emoji = item.emoji;
+                btn.dataset.label = item.label;
                 const emSize = 40 + (item.size * 6);
                 btn.style.cssText = `border:3px solid #42A5F5;border-radius:16px;background:#E3F2FD;cursor:pointer;padding:8px;display:flex;flex-direction:column;align-items:center;transition:transform 0.1s;`;
                 btn.innerHTML = `<span style="font-size:${emSize}px;">${item.emoji}</span><span style="font-size:12px;color:#1565C0;font-weight:bold;">${item.label}</span>`;
                 btn.addEventListener('click', () => selectItem(btn, item));
                 choicesArea.appendChild(btn);
             });
+        }
+
+        function removeSlot(idx) {
+            if (idx >= userOrder.length) return;
+            const removed = userOrder.splice(idx, 1)[0];
+            const btn = Array.from(choicesArea.children).find(b => b.dataset.label === removed.label);
+            if (btn) {
+                btn.dataset.used = '0';
+                btn.style.opacity = '1';
+                btn.style.transform = '';
+                btn.disabled = false;
+            }
+            checkBtn.style.display = 'none';
+
+            // Re-render all slots
+            Array.from(slotsArea.children).forEach((slot, i) => {
+                slot.innerHTML = '';
+                if (i < userOrder.length) {
+                    const item = userOrder[i];
+                    const emSize = 36 + (item.size * 4);
+                    slot.innerHTML = `<span style="font-size:${emSize}px;">${item.emoji}</span><span style="font-size:10px;color:#1565C0;">${item.label}</span>`;
+                    slot.style.borderColor = '#42A5F5';
+                    slot.style.background = '#E3F2FD';
+                } else {
+                    const num = document.createElement('div');
+                    num.innerText = i + 1;
+                    num.style.cssText = 'font-size:11px;color:#90CAF9;font-weight:bold;margin-bottom:2px;';
+                    slot.appendChild(num);
+                    slot.style.borderColor = '#90CAF9';
+                    slot.style.background = 'rgba(255,255,255,0.5)';
+                }
+            });
+            if (window.sound) window.sound.playClick();
         }
 
         function selectItem(btn, item) {

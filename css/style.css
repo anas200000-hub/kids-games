@@ -1609,23 +1609,25 @@ canvas {
 /* GAME 23: Girls Dress Up (Checkered Layout) styling */
 .poki-style-dressup-container {
     display: flex;
-    flex-direction: row;
+    flex-direction: column; /* Vertical layout: Preview on top, Wardrobe below */
     width: 100%;
-    height: 500px;
+    max-width: 520px;
+    margin: 0 auto;
     background-color: #ffffff;
     border-radius: 24px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    direction: ltr; /* Left-to-right split: Preview on Left, Wardrobe on Right */
+    direction: ltr;
 }
 
 .poki-model-panel {
-    width: 40%;
-    height: 100%;
+    width: 100%;
+    height: 300px;
+    flex-shrink: 0;
     position: relative;
     background-color: #fff9f6;
     overflow: hidden;
-    border-right: 4px solid #f2e3ff;
+    border-bottom: 4px solid #f2e3ff;
 }
 
 .room-background.grid-background {
@@ -1644,11 +1646,11 @@ canvas {
 
 .avatar-render-stage {
     position: absolute;
-    top: 30px;
+    top: 8px;
     left: 50%;
     transform: translateX(-50%);
-    width: 220px;
-    height: 330px;
+    width: 190px;
+    height: 285px;
     z-index: 5;
     display: flex;
     align-items: center;
@@ -1660,8 +1662,7 @@ canvas {
 }
 
 .poki-wardrobe-drawer {
-    width: 60%;
-    height: 100%;
+    width: 100%;
     background-color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -1733,15 +1734,15 @@ canvas {
 }
 
 .poki-items-grid-container {
-    flex-grow: 1;
+    max-height: 240px;
     overflow-y: auto;
     padding: 8px 12px;
 }
 
 .poki-items-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 .poki-item-card {
@@ -1896,4 +1897,282 @@ canvas {
     .game-grid {
         grid-template-columns: repeat(5, 1fr);
     }
+}
+
+/* ------------------------------------------------------------- */
+/* GAME: 2048 (دمج الأرقام للأطفال) */
+.game-2048-container {
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 10px;
+    font-family: var(--font-kids, 'Cairo', sans-serif);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.g2048-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 8px;
+}
+
+.g2048-title-wrap {
+    text-align: right;
+}
+
+.g2048-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    margin: 0;
+    color: #776e65;
+    line-height: 1;
+    background: linear-gradient(135deg, #f65e3b, #edc22e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.g2048-subtitle {
+    font-size: 0.85rem;
+    color: #8f7a66;
+    font-weight: 600;
+}
+
+.g2048-scores {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.g2048-score-box {
+    background: #bbada0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: #ffffff;
+    text-align: center;
+    min-width: 58px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.g2048-score-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #eee4da;
+    font-weight: bold;
+}
+
+.g2048-score-val {
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.g2048-btn {
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    transition: transform 0.1s, background-color 0.15s;
+    outline: none;
+}
+
+.g2048-restart-btn {
+    background: #8f7a66;
+    color: #ffffff;
+    font-size: 1.25rem;
+    padding: 8px 12px;
+    height: 48px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+.g2048-restart-btn:active {
+    transform: scale(0.92);
+}
+
+.g2048-board-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #bbada0;
+    border-radius: 16px;
+    padding: 10px;
+    box-sizing: border-box;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.g2048-board {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.g2048-grid-bg {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+}
+
+.g2048-cell-bg {
+    background: rgba(238, 228, 218, 0.35);
+    border-radius: 10px;
+}
+
+.g2048-tile-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.g2048-tile {
+    position: absolute;
+    width: calc(25% - 8px);
+    height: calc(25% - 8px);
+    margin: 4px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: top 0.1s ease-in-out, left 0.1s ease-in-out;
+    box-sizing: border-box;
+}
+
+.g2048-tile-emoji {
+    font-size: 1.15rem;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.g2048-tile-val {
+    font-size: 1.45rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.g2048-tile.mid-font .g2048-tile-val {
+    font-size: 1.2rem;
+}
+
+.g2048-tile.small-font .g2048-tile-val {
+    font-size: 0.95rem;
+}
+
+.g2048-tile.small-font .g2048-tile-emoji {
+    font-size: 0.9rem;
+}
+
+@keyframes tileAppear {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tilePop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+.g2048-tile.tile-new {
+    animation: tileAppear 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.g2048-tile.tile-merged {
+    animation: tilePop 0.22s ease-in-out;
+}
+
+/* Overlay Game Over / Win */
+.g2048-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(238, 228, 218, 0.92);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 10;
+    animation: tileAppear 0.3s ease;
+}
+
+.g2048-overlay-actions {
+    margin-top: 18px;
+    display: flex;
+    gap: 10px;
+}
+
+.g2048-action-btn {
+    background: #8f7a66;
+    color: #ffffff;
+    font-size: 1.1rem;
+    padding: 10px 22px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.g2048-action-btn.secondary {
+    background: #edc22e;
+    color: #f9f6f2;
+}
+
+.g2048-action-btn:active {
+    transform: scale(0.95);
+}
+
+/* Controls / D-pad */
+.g2048-controls {
+    margin-top: 14px;
+    text-align: center;
+}
+
+.g2048-hint {
+    font-size: 0.85rem;
+    color: #8f7a66;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.g2048-dpad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.g2048-dpad-row {
+    display: flex;
+    gap: 8px;
+}
+
+.g2048-arrow-btn {
+    width: 54px;
+    height: 48px;
+    border: none;
+    border-radius: 12px;
+    background: #ffffff;
+    font-size: 1.35rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #bbada0, 0 5px 8px rgba(0,0,0,0.08);
+    transition: transform 0.08s, box-shadow 0.08s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.g2048-arrow-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #bbada0;
 }

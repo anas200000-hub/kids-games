@@ -35,6 +35,220 @@ window.initGirlsDressupGame = function (container) {
     // Fixed Warm Tan skin color (No skin color selection)
     const fixedSkinColor = '#be8b6f';
 
+    // ------------------------------------------------------------------
+    // Anime-style (cel-shaded) rendering helpers for hair & clothes
+    // ------------------------------------------------------------------
+    let gdUid = 0;
+    const gdId = (p) => `gd-${p}-${++gdUid}`;
+    const SHADE = '#2a1438'; // translucent cel-shadow tint (works on any color or print)
+
+    function mixHex(a, b, t) {
+        const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+        const ch = (s) => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t);
+        return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
+    }
+
+    function luminance(c) {
+        const p = parseInt(c.slice(1), 16);
+        return (0.299 * ((p >> 16) & 255) + 0.587 * ((p >> 8) & 255) + 0.114 * (p & 255)) / 255;
+    }
+
+    // Builds a cel-shading palette (base / shadow / highlight / lineart) from one flat color
+    function tone(c) {
+        const lum = luminance(c);
+        const base = lum < 0.15 ? mixHex(c, '#4a4a5e', 0.4) : c;
+        return {
+            base,
+            shadow: mixHex(base, '#3b2450', lum > 0.9 ? 0.2 : 0.3),
+            deep: mixHex(base, '#24122e', 0.5),
+            light: mixHex(base, '#ffffff', 0.45),
+            shine: mixHex(base, '#ffffff', 0.78),
+            line: mixHex(base, '#1f1020', 0.72),
+            isLight: lum > 0.8
+        };
+    }
+
+    const ln = (t, w = 1) => `stroke="${t.line}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+    // Draws a shape on the left side plus its mirror image on the right side (x -> 200 - x)
+    const mirror = (s) => `${s}<g transform="translate(200,0) scale(-1,1)">${s}</g>`;
+    const WHITE = tone('#ffffff');
+    const PINK = tone('#ff5c93');
+    const RED = tone('#e53950');
+    const GOLD = { base: '#ffd54a', shadow: '#d9a21e', line: '#8a5a12', shine: '#fff6c4' };
+
+    // Glossy "angel ring" highlight band across the crown of the hair
+    function angelRing(t, y = 54, w = 25) {
+        let d = `M ${100 - w},${y + 5} Q 100,${y - 8} ${100 + w},${y + 5}`;
+        const n = 12;
+        for (let i = 1; i < n; i++) {
+            const x = 100 + w - (2 * w * i) / n;
+            const u = (x - 100) / w;
+            const top = y + 5 - 6.5 * (1 - u * u);
+            d += ` L ${x.toFixed(1)},${(top + (i % 2 ? 5 : 2)).toFixed(1)}`;
+        }
+        return `<path d="${d} Z" fill="${t.shine}" opacity="0.85"/>`;
+    }
+
+    // Hair cap + pointed anime bang locks. locks = [notch, tip, notch, tip, ..., notch] ordered right -> left
+    function animeBangs(t, locks, opts = {}) {
+        const left = opts.left || [59, 92], right = opts.right || [141, 92], top = opts.top || 41;
+        const q = (a, b, k) => `Q ${((a[0] + b[0]) / 2 + k).toFixed(1)},${((a[1] + b[1]) / 2).toFixed(1)} ${b[0]},${b[1]}`;
+        let d = `M ${left[0]},${left[1]} C ${left[0] - 4},60 72,${top} 100,${top} C 128,${top} ${right[0] + 4},60 ${right[0]},${right[1]}`;
+        let prev = right;
+        locks.forEach(p => { d += ' ' + q(prev, p, p[1] > prev[1] ? 1.5 : -1.5); prev = p; });
+        d += ' ' + q(prev, left, 0) + ' Z';
+        let shade = '', strands = '';
+        for (let i = 1; i < locks.length - 1; i += 2) {
+            const a = locks[i - 1], tip = locks[i], b = locks[i + 1];
+            const mx = a[0] + (b[0] - a[0]) * 0.45, my = Math.max(a[1], b[1]) + 3;
+            shade += `M ${a[0] - 1},${a[1] + 1} L ${tip[0]},${tip[1] - 1.5} L ${mx.toFixed(1)},${my} Z `;
+            const sx = (a[0] + b[0]) / 2;
+            strands += `M ${sx},${Math.min(a[1], b[1]) - 9} Q ${sx},${tip[1] - 8} ${tip[0]},${tip[1] - 3} `;
+        }
+        return `<path d="${d}" fill="${t.base}"/>
+            <path d="${shade}" fill="${t.shadow}"/>
+            <path d="${strands}" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.5"/>
+            ${opts.ring === false ? '' : angelRing(t)}
+            <path d="${d}" fill="none" ${ln(t)}/>`;
+    }
+
+    // Long face-framing locks in front of the ears
+    function sideLocks(t, len) {
+        return mirror(`<path d="M 67,70 C 60,80 57,98 57,${len - 8} Q 57,${len - 3} 59,${len} Q 61,${len - 9} 63,${len - 15} C 65,100 67,88 71,77 Z" fill="${t.base}" ${ln(t, 0.9)}/>
+            <path d="M 68,76 C 64,90 62,104 61.5,${len - 14} C 63,104 65,90 70,79 Z" fill="${t.shadow}"/>
+            <path d="M 62,84 Q 59,100 59.5,${len - 10}" fill="none" stroke="${t.shine}" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>`);
+    }
+
+    function backHair(t, d, inner, strands) {
+        return `<path d="${d}" fill="${t.base}" ${ln(t, 1.1)}/>
+            ${inner ? `<path d="${inner}" fill="${t.shadow}"/>` : ''}
+            ${strands ? `<path d="${strands}" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.5"/>` : ''}`;
+    }
+
+    // Braid made of alternating tilted segments. pts = [[x, y, extraAngle]]
+    function braidChain(t, pts) {
+        return pts.map((p, i) => {
+            const rot = (i % 2 ? 28 : -28) + (p[2] || 0);
+            return `<g transform="translate(${p[0]},${p[1]}) rotate(${rot.toFixed(1)})">
+                <ellipse cx="0" cy="0" rx="7.5" ry="5.2" fill="${t.base}" ${ln(t, 0.9)}/>
+                <path d="M -7,0.8 Q 0,7 7,0.8 Q 0,3 -7,0.8 Z" fill="${t.shadow}"/>
+                <path d="M -4,-2.5 Q 0,-4 4,-2.5" fill="none" stroke="${t.shine}" stroke-width="1.1" stroke-linecap="round" opacity="0.8"/>
+            </g>`;
+        }).join('');
+    }
+
+    function flower(cx, cy, r, petal = '#ffffff', center = '#ffd54a') {
+        let s = '';
+        for (let i = 0; i < 5; i++) {
+            const a = (i * 72 - 90) * Math.PI / 180;
+            s += `<circle cx="${(cx + Math.cos(a) * r).toFixed(1)}" cy="${(cy + Math.sin(a) * r).toFixed(1)}" r="${(r * 0.75).toFixed(2)}" fill="${petal}"/>`;
+        }
+        return `<g>${s}<circle cx="${cx}" cy="${cy}" r="${(r * 0.6).toFixed(2)}" fill="${center}"/></g>`;
+    }
+
+    function bow(cx, cy, s, t) {
+        return `<g transform="translate(${cx},${cy}) scale(${s})">
+            <path d="M -1,1 L -5,11 L -2.5,10 L -1.5,12 L 1.5,2 Z M 1,1 L 5,11 L 2.5,10 L 1.5,12 L -1.5,2 Z" fill="${t.shadow}" ${ln(t, 0.8)}/>
+            <path d="M 0,0 C -5,-7 -12,-6 -11,0 C -12,6 -5,7 0,0 Z M 0,0 C 5,-7 12,-6 11,0 C 12,6 5,7 0,0 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+            <path d="M -1.5,1 C -5,5 -9,5 -10.5,2.5 C -10,5.5 -5,6 -1.5,1 Z M 1.5,1 C 5,5 9,5 10.5,2.5 C 10,5.5 5,6 1.5,1 Z" fill="${t.shadow}"/>
+            <path d="M -8,-3 Q -6,-4.5 -4,-3.5" fill="none" stroke="${t.shine}" stroke-width="1.1" stroke-linecap="round"/>
+            <ellipse cx="0" cy="0" rx="2.4" ry="2.9" fill="${t.base}" ${ln(t, 0.8)}/>
+        </g>`;
+    }
+
+    const sparkle = (x, y, s, c = '#ffffff') => `<path d="M ${x},${y - s} Q ${x},${y} ${x + s},${y} Q ${x},${y} ${x},${y + s} Q ${x},${y} ${x - s},${y} Q ${x},${y} ${x},${y - s} Z" fill="${c}"/>`;
+
+    const TIARA = `<path d="M 77,60 L 80,49 L 88,56 L 94,45 L 100,53 L 106,45 L 112,56 L 120,49 L 123,60 Q 100,54 77,60 Z" fill="${GOLD.base}" stroke="${GOLD.line}" stroke-width="0.9" stroke-linejoin="round"/>
+        <path d="M 77,60 Q 100,54 123,60 L 123,62.5 Q 100,56.5 77,62.5 Z" fill="${GOLD.shadow}" stroke="${GOLD.line}" stroke-width="0.6"/>
+        <path d="M 81,52 L 83,57 M 94,48.5 L 95,54" stroke="${GOLD.shine}" stroke-width="1" stroke-linecap="round"/>
+        <circle cx="100" cy="56.5" r="2.8" fill="#ff4f8b" stroke="#a3204e" stroke-width="0.6"/>
+        <circle cx="99.2" cy="55.6" r="0.9" fill="#ffffff"/>
+        <circle cx="88" cy="58.4" r="1.6" fill="#4fc3f7" stroke="#1b6a8f" stroke-width="0.4"/>
+        <circle cx="112" cy="58.4" r="1.6" fill="#4fc3f7" stroke="#1b6a8f" stroke-width="0.4"/>`;
+
+    // Bang lock layouts (notch, tip, notch, ... right -> left)
+    const BANGS_FULL = [[132, 64], [125, 78], [117, 60], [110, 77], [101, 59], [92, 78], [84, 60], [75, 78], [68, 64]];
+    const BANGS_CURLY = [[133, 66], [127, 77], [120, 62], [112, 76], [104, 61], [96, 76], [88, 61], [80, 77], [72, 64]];
+    const BANGS_BLUNT = [[134, 66], [128, 77], [122, 70], [116, 77.5], [110, 71], [104, 78], [98, 71], [92, 78], [86, 71], [80, 77.5], [74, 70], [70, 76], [66, 66]];
+    const BANGS_SWEPT = [[133, 64], [128, 79], [121, 58], [110, 78], [104, 56], [93, 77], [87, 57], [77, 76], [71, 62]];
+    const BANGS_SPIKY = [[136, 66], [131, 80], [124, 57], [116, 78], [109, 55], [101, 77], [93, 55], [85, 78], [77, 58], [69, 80], [65, 68]];
+    const BANGS_PART = [[134, 66], [127, 77], [119, 60], [109, 75], [101, 58], [91, 77], [83, 60], [75, 78], [68, 64]];
+
+    // ---------- Clothing helpers ----------
+    const SHIRT = 'M 78,125 C 82,123 87,122 90,122 Q 100,131 110,122 C 113,122 118,123 122,125 C 124,140 123,158 126,177 Q 100,182 74,177 C 77,158 76,140 78,125 Z';
+
+    // Torso garment with clipped cel shading, folds and highlight. `extra` = prints drawn under the shading
+    function shirtBody(t, d = SHIRT, extra = '') {
+        const id = gdId('top');
+        return `<defs><clipPath id="${id}"><path d="${d}"/></clipPath></defs>
+            <path d="${d}" fill="${t.base}"/>
+            <g clip-path="url(#${id})">
+                ${extra}
+                <path d="M 112,116 C 120,140 119,162 115,190 L 140,190 L 140,116 Z" fill="${SHADE}" opacity="0.22"/>
+                <path d="M 66,171 Q 100,176 134,171 L 134,192 L 66,192 Z" fill="${SHADE}" opacity="0.14"/>
+                <path d="M 86,165 Q 90,171 88,178 M 112,164 Q 109,171 111,178 M 95,147 Q 99,154 97,161" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.45"/>
+                <path d="M 82,131 Q 80.5,150 80.5,167" fill="none" stroke="${t.shine}" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+            </g>
+            <path d="${d}" fill="none" ${ln(t)}/>`;
+    }
+
+    function sleeveShort(t, cuff) {
+        return mirror(`<path d="M 81,126 C 70,127 63,137 60,152 Q 67,157 75,156 C 75,147 77,138 81,133 Z" fill="${t.base}" ${ln(t)}/>
+            <path d="M 61,148 Q 68,153 75.3,151.5 L 75,156 Q 67,157 60,152 Z" fill="${cuff || t.shadow}" ${ln(t, 0.7)}/>
+            <path d="M 75,154 C 75,147 77,139 80,134 L 78,134 C 74,140 72.5,147 72.5,154 Z" fill="${SHADE}" opacity="0.2"/>
+            <path d="M 66,137 Q 68,144 67,150" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.5"/>
+            <path d="M 70,131 Q 65,137 63,146" fill="none" stroke="${t.shine}" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>`);
+    }
+
+    function sleevePuff(t, cuff) {
+        return mirror(`<path d="M 83,126 C 70,121 57,129 57,143 C 57,151 63,155 69,153 Q 74,156 77,151 C 77,143 79,136 83,132 Z" fill="${t.base}" ${ln(t)}/>
+            <path d="M 58,146 C 60,152 66,154 70,152 Q 74,154 77,150 L 77,145 Q 70,150 58,143 Z" fill="${t.shadow}"/>
+            <path d="M 63,131 Q 65,140 63,149 M 70,127 Q 72,138 71,151" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.5"/>
+            <path d="M 66,127 Q 60,131 59,139" fill="none" stroke="${t.shine}" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/>
+            <path d="M 60,150 Q 68,157 77,151 L 77.5,155 Q 68,161 60,154 Z" fill="${cuff || t.light}" ${ln(t, 0.7)}/>`);
+    }
+
+    function sleeveLong(t, cuff) {
+        return mirror(`<path d="M 81,126 C 70,128 63,142 61,158 C 60,164 60.5,169 61.5,172 L 75.5,171 C 74.5,160 75.5,146 81,134 Z" fill="${t.base}" ${ln(t)}/>
+            <path d="M 75.5,171 C 74.5,160 75.5,146 81,134 L 79,136 C 73,148 71.5,160 71.5,171 Z" fill="${SHADE}" opacity="0.22"/>
+            <path d="M 62.5,152 Q 66,151 68,154 M 63,157 Q 66.5,156 69,159" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.55"/>
+            <path d="M 70,132 Q 64,142 62.5,152" fill="none" stroke="${t.shine}" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+            <path d="M 61.2,166 L 75,165.5 L 75.6,172 L 61.6,172.8 Z" fill="${cuff || t.shadow}" ${ln(t, 0.7)}/>
+            <path d="M 64,166 L 64.2,172.5 M 67,165.9 L 67.2,172.4 M 70,165.8 L 70.2,172.2 M 73,165.6 L 73.2,172" stroke="${t.line}" stroke-width="0.4" opacity="0.5"/>`);
+    }
+
+    // Trousers outline. hw = half width of each leg at the hem, y = hem height
+    function pantsPath(hw, y) {
+        const o = (y - (y - 174) * 0.4).toFixed(1), i = (y - (y - 197) * 0.6).toFixed(1);
+        return `M 75,174 L 125,174 C 127,190 ${114 + hw},${o} ${114 + hw},${y} Q 114,${y + 2} ${114 - hw},${y} C ${114 - hw},${i} 103,198 100,197 C 97,198 ${86 + hw},${i} ${86 + hw},${y} Q 86,${y + 2} ${86 - hw},${y} C ${86 - hw},${o} 73,190 75,174 Z`;
+    }
+
+    function pantsBase(t, hw, y, extra = '', opts = {}) {
+        const d = pantsPath(hw, y), id = gdId('pants');
+        const knee = 174 + (y - 174) * 0.6, i = (y - (y - 197) * 0.6).toFixed(1);
+        const band = opts.noBand
+            ? `<path d="M 75,174 L 125,174 L 125.3,178 Q 100,180 74.7,178 Z" fill="${t.shadow}" ${ln(t, 0.7)}/>`
+            : `<path d="M 75,174 L 125,174 L 125.4,180 Q 100,182 74.6,180 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+               <path d="M 80,174.5 L 80,180.5 M 92,174.5 L 92,181.5 M 108,174.5 L 108,181.5 M 120,174.5 L 120,180.5" stroke="${t.line}" stroke-width="0.8"/>
+               <circle cx="100" cy="177.2" r="1.5" fill="${GOLD.base}" stroke="${GOLD.line}" stroke-width="0.5"/>
+               <path d="M 103,181 L 103,191 Q 102,194 100,195.5" fill="none" ${ln(t, 0.7)}/>
+               <path d="M 77.5,181 Q 84,185 86.5,180.8 M 122.5,181 Q 116,185 113.5,180.8" fill="none" ${ln(t, 0.7)}/>`;
+        return `<defs><clipPath id="${id}"><path d="${d}"/></clipPath></defs>
+            <path d="${d}" fill="${t.base}"/>
+            <g clip-path="url(#${id})">
+                ${extra}
+                <path d="M 117,176 C 121,196 ${114 + hw - 4},${y - 20} ${114 + hw - 3},${y + 4} L 140,${y + 4} L 140,170 Z" fill="${SHADE}" opacity="0.22"/>
+                <path d="M 101,197 C 104,205 ${114 - hw + 3},${i} ${114 - hw + 3},${y + 4} L ${114 - hw - 4},${y + 4} L 100,198 Z" fill="${SHADE}" opacity="0.18"/>
+                <path d="M 70,180 Q 100,184 130,180 L 130,184 Q 100,188 70,184 Z" fill="${SHADE}" opacity="0.16"/>
+                <path d="M 82,${knee - 2} Q 86,${knee + 2} 91,${knee - 1} M 109,${knee - 1} Q 114,${knee + 2} 118,${knee - 2} M ${86 - hw + 2},${y - 6} Q 86,${y - 3} ${86 + hw - 2},${y - 7} M ${114 - hw + 2},${y - 7} Q 114,${y - 3} ${114 + hw - 2},${y - 6}" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.5"/>
+                <path d="M 78,184 C 77,200 ${86 - hw + 3},${y - 30} ${86 - hw + 3},${y - 6}" fill="none" stroke="${t.shine}" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+            </g>
+            ${band}
+            <path d="${d}" fill="none" ${ln(t)}/>`;
+    }
+
+
+
     // Database of items (8 items per category matching the rules)
     const database = {
         eyes: [
@@ -167,457 +381,519 @@ window.initGirlsDressupGame = function (container) {
                 </g>`
             }
         ],
-        hair: [
+hair: [
             {
                 id: 'hair1',
-                name: 'شعر منسدل طويل ناعم',
-                // Back layer: full hair body behind head
-                backSvg: (color) => `<g>
-                    <!-- Long straight back hair falling behind body -->
-                    <path d="M 67,62 C 55,55 50,70 52,90 C 48,100 44,130 46,155 C 48,170 56,178 62,180 L 68,180 C 64,165 56,140 58,115 C 60,90 62,68 67,62 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <path d="M 133,62 C 145,55 150,70 148,90 C 152,100 156,130 154,155 C 152,170 144,178 138,180 L 132,180 C 136,165 144,140 142,115 C 140,90 138,68 133,62 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <!-- Crown cap behind -->
-                    <path d="M 67,62 C 70,46 80,38 100,38 C 120,38 130,46 133,62 C 130,54 118,50 100,50 C 82,50 70,54 67,62 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                </g>`,
-                // Front layer: fringe/bang over forehead
-                frontSvg: (color) => `<g>
-                    <!-- Side strands in front of ears -->
-                    <path d="M 66,70 C 60,80 58,100 60,115 C 62,108 64,90 66,78 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 134,70 C 140,80 142,100 140,115 C 138,108 136,90 134,78 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <!-- Bang across forehead -->
-                    <path d="M 68,68 C 74,56 88,56 93,68 C 93,68 96,58 100,56 C 104,58 107,68 107,68 C 112,56 126,56 132,68 Q 100,78 68,68 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 72,64 Q 100,54 128,64 Q 100,58 72,64 Z" fill="white" opacity="0.3"/>
-                </g>`
+                name: 'شعر طويل منسدل (أنمي)',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 60,64 C 49,74 46,98 46,126 C 46,160 44,184 41,202 L 51,195 L 57,204 L 65,193 L 73,200 L 78,184 L 122,184 L 127,200 L 135,193 L 143,204 L 149,195 L 159,202 C 156,184 154,160 154,126 C 154,98 151,74 140,64 C 128,44 72,44 60,64 Z',
+                        'M 63,100 C 61,130 61,162 65,190 L 72,196 L 78,150 L 122,150 L 128,196 L 135,190 C 139,162 139,130 137,100 Z',
+                        'M 52,108 Q 50,150 49,192 M 148,108 Q 150,150 151,192 M 58,118 Q 56,160 59,198 M 142,118 Q 144,160 141,198')
+                        + `<path d="M 50,98 Q 48,128 48,160 M 150,98 Q 152,128 152,160" fill="none" stroke="${t.shine}" stroke-width="2.2" stroke-linecap="round" opacity="0.6"/>`;
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    return sideLocks(t, 136) + animeBangs(t, BANGS_FULL);
+                }
             },
             {
                 id: 'hair2',
-                name: 'تسريحة كعكتين (بانز)',
-                backSvg: (color) => `<g>
-                    <!-- Left bun -->
-                    <circle cx="67" cy="56" r="17" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <circle cx="67" cy="56" r="17" fill="url(#shadowOverlay)" opacity="0.4"/>
-                    <!-- Right bun -->
-                    <circle cx="133" cy="56" r="17" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <circle cx="133" cy="56" r="17" fill="url(#shadowOverlay)" opacity="0.4"/>
-                    <!-- Crown base connecting buns -->
-                    <path d="M 67,65 C 72,55 82,52 100,52 C 118,52 128,55 133,65 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <!-- Bow ribbons -->
-                    <path d="M 58,50 Q 67,58 60,58 Q 56,55 58,50 Z" fill="#ff4081"/>
-                    <path d="M 76,50 Q 67,58 74,58 Q 78,55 76,50 Z" fill="#ff4081"/>
-                    <path d="M 124,50 Q 133,58 126,58 Q 122,55 124,50 Z" fill="#ff4081"/>
-                    <path d="M 142,50 Q 133,58 140,58 Q 144,55 142,50 Z" fill="#ff4081"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <!-- Side pieces in front of ears -->
-                    <path d="M 66,72 C 60,82 58,100 60,112 C 62,106 64,88 66,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 134,72 C 140,82 142,100 140,112 C 138,106 136,88 134,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <!-- Forehead band -->
-                    <path d="M 68,70 Q 100,60 132,70 Q 118,74 100,74 Q 82,74 68,70 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                </g>`
+                name: 'كعكتين أنمي (أودانغو)',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    const bun = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="16" fill="${t.base}" ${ln(t, 1.1)}/>
+                        <path d="M ${cx + 15},${cy + 5} A 16 16 0 0 1 ${cx - 9},${cy + 13} A 13 13 0 0 0 ${cx + 15},${cy + 5} Z" fill="${t.shadow}"/>
+                        <path d="M ${cx - 9},${cy - 3} Q ${cx},${cy - 11} ${cx + 9},${cy - 3} M ${cx - 11},${cy + 4} Q ${cx},${cy + 11} ${cx + 11},${cy + 3} M ${cx - 4},${cy - 14} Q ${cx + 6},${cy} ${cx - 2},${cy + 14}" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.55"/>
+                        <path d="M ${cx - 11},${cy - 6} Q ${cx - 7},${cy - 12} ${cx - 1},${cy - 13}" fill="none" stroke="${t.shine}" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>`;
+                    return backHair(t,
+                        'M 60,68 C 51,80 50,102 54,118 Q 62,124 70,118 L 130,118 Q 138,124 146,118 C 150,102 149,80 140,68 C 128,46 72,46 60,68 Z',
+                        'M 62,98 C 60,108 60,114 64,118 L 136,118 C 140,114 140,108 138,98 Z')
+                        + bun(64, 50) + bun(136, 50);
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    return sideLocks(t, 114) + animeBangs(t, BANGS_FULL) + bow(77, 57, 0.6, PINK) + bow(123, 57, 0.6, PINK);
+                }
             },
             {
                 id: 'hair3',
-                name: 'شعر كيرلي منفوش (بطاقة ذهبية)',
-                backSvg: (color) => `<g>
-                    <!-- Big fluffy curly mass behind head -->
-                    <path d="M 64,68 C 44,55 36,78 40,100 C 30,110 28,138 42,155 C 55,170 145,170 158,155 C 172,138 170,110 160,100 C 164,78 156,55 136,68 C 120,46 80,46 64,68 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <path d="M 64,68 C 44,55 36,78 40,100 C 30,110 28,138 42,155 C 55,170 145,170 158,155 C 172,138 170,110 160,100 C 164,78 156,55 136,68 C 120,46 80,46 64,68 Z" fill="url(#shadowOverlay)" opacity="0.35"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <!-- Curly side pieces -->
-                    <path d="M 65,72 C 58,80 55,95 58,108 C 60,100 63,86 66,78 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 135,72 C 142,80 145,95 142,108 C 140,100 137,86 134,78 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <!-- Wavy curly bang -->
-                    <path d="M 67,70 Q 76,62 85,70 Q 94,62 100,60 Q 106,62 115,70 Q 124,62 133,70 Q 100,80 67,70 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 67,70 Q 76,62 85,70 Q 94,62 100,60 Q 106,62 115,70 Q 124,62 133,70 Q 100,80 67,70 Z" fill="url(#shadowOverlay)" opacity="0.3"/>
-                    <!-- Gold headband / tiara -->
-                    <path d="M 74,68 L 100,54 L 126,68 L 100,62 Z" fill="url(#goldGrad)" stroke="#5a4020" stroke-width="1"/>
-                    <circle cx="100" cy="54" r="3" fill="#ff4081"/>
-                    <circle cx="82" cy="62" r="2" fill="url(#goldGrad)"/>
-                    <circle cx="118" cy="62" r="2" fill="url(#goldGrad)"/>
-                </g>`
+                name: 'شعر كيرلي منفوش مع تاج ذهبي',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 64,60 Q 52,50 46,64 Q 34,70 40,86 Q 30,96 38,110 Q 28,124 40,136 Q 34,152 50,158 Q 56,170 70,164 L 130,164 Q 144,170 150,158 Q 166,152 160,136 Q 172,124 162,110 Q 170,96 160,86 Q 166,70 154,64 Q 148,50 136,60 Q 122,40 100,42 Q 78,40 64,60 Z',
+                        'M 60,100 Q 54,122 58,150 Q 68,158 80,150 L 120,150 Q 132,158 142,150 Q 146,122 140,100 Z',
+                        'M 44,94 q 6,-4 9,2 M 41,124 q 6,-4 9,2 M 52,150 q 6,-4 9,2 M 156,94 q -6,-4 -9,2 M 159,124 q -6,-4 -9,2 M 148,150 q -6,-4 -9,2 M 50,72 q 6,-3 8,3 M 150,72 q -6,-3 -8,3')
+                        + `<path d="M 42,80 Q 40,86 43,92 M 36,112 Q 35,118 38,124 M 42,140 Q 42,146 46,150" fill="none" stroke="${t.shine}" stroke-width="2" stroke-linecap="round" opacity="0.65"/>`;
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    const ringlet = `<path d="M 64,74 C 55,82 54,94 59,99 C 53,104 53,114 59,118 C 54,123 55,132 62,135 C 61,129 64,125 65,121 C 61,116 62,109 65,105 C 61,99 62,90 68,81 Z" fill="${t.base}" ${ln(t, 0.9)}/>
+                        <path d="M 62,104 C 61,110 62,115 64,119 M 63,85 C 61,90 61,95 62,99" fill="none" stroke="${t.shadow}" stroke-width="2"/>
+                        <path d="M 56,101 Q 60,104 64,102 M 56,120 Q 60,123 64,121" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.6"/>
+                        <path d="M 57,92 Q 57,96 59,98 M 56,111 Q 56,115 58,117" fill="none" stroke="${t.shine}" stroke-width="1.4" stroke-linecap="round"/>`;
+                    return mirror(ringlet) + animeBangs(t, BANGS_CURLY, { ring: false }) + TIARA;
+                }
             },
             {
                 id: 'hair4',
-                name: 'شعر بوب مستقيم ناعم',
-                backSvg: (color) => `<g>
-                    <!-- Bob back — covers head sides and ends at jaw level -->
-                    <path d="M 65,65 C 50,62 44,80 44,100 C 44,118 50,132 58,140 L 68,145 L 132,145 L 142,140 C 150,132 156,118 156,100 C 156,80 150,62 135,65 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <path d="M 65,65 C 50,62 44,80 44,100 C 44,118 50,132 58,140 L 68,145 L 132,145 L 142,140 C 150,132 156,118 156,100 C 156,80 150,62 135,65 Z" fill="url(#shadowOverlay)" opacity="0.3"/>
-                    <!-- Top cap -->
-                    <path d="M 65,65 C 72,48 85,42 100,42 C 115,42 128,48 135,65 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <!-- Side strands in front of ears -->
-                    <path d="M 65,70 C 60,82 58,105 60,120 C 62,110 64,90 66,78 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 135,70 C 140,82 142,105 140,120 C 138,110 136,90 134,78 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <!-- Straight bang across forehead -->
-                    <path d="M 67,70 Q 100,60 133,70 L 128,76 L 100,73 L 72,76 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 70,66 Q 100,58 130,66 Q 100,62 70,66 Z" fill="white" opacity="0.25"/>
-                </g>`
+                name: 'قصة بوب هيمي (أنمي)',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 58,66 C 48,78 46,100 48,118 C 50,128 56,132 64,130 L 70,124 L 130,124 L 136,130 C 144,132 150,128 152,118 C 154,100 152,78 142,66 C 130,44 70,44 58,66 Z',
+                        'M 64,96 C 62,110 62,120 66,126 L 134,126 C 138,120 138,110 136,96 Z',
+                        'M 53,90 Q 50,108 54,126 M 147,90 Q 150,108 146,126')
+                        + `<path d="M 51,92 Q 49,104 50,116" fill="none" stroke="${t.shine}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`;
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    return sideLocks(t, 126) + animeBangs(t, BANGS_BLUNT);
+                }
             },
             {
                 id: 'hair5',
-                name: 'شعر ذيل الحصان العالي',
-                backSvg: (color) => `<g>
-                    <!-- Ponytail flowing down the back -->
-                    <path d="M 114,60 C 128,56 148,72 148,100 C 148,128 136,158 128,175 C 124,168 130,140 132,115 C 134,90 128,66 118,62 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <path d="M 114,60 C 128,56 148,72 148,100 C 148,128 136,158 128,175 C 124,168 130,140 132,115 C 134,90 128,66 118,62 Z" fill="url(#shadowOverlay)" opacity="0.3"/>
-                    <!-- Hair cap over head -->
-                    <path d="M 66,66 C 56,65 48,78 48,100 C 48,115 54,126 62,130 L 138,130 C 146,126 152,115 152,100 C 152,78 144,65 134,66 C 120,46 80,46 66,66 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <!-- Scrunchie / band -->
-                    <ellipse cx="118" cy="62" rx="7" ry="5" fill="#ff4081" stroke="#c0005a" stroke-width="1"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <path d="M 65,72 C 60,84 58,104 60,118 C 62,108 64,90 66,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 135,72 C 140,84 142,104 140,118 C 138,108 136,90 134,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 67,70 Q 100,58 133,70 Q 116,76 100,76 Q 84,76 67,70 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                </g>`
+                name: 'ذيل حصان عالي متمايل',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 122,47 C 140,36 163,50 165,76 C 167,100 160,130 167,160 L 159,154 L 157,171 L 149,158 L 145,173 L 141,153 C 136,127 146,98 141,76 C 139,64 131,55 122,51 Z',
+                        'M 141,76 C 146,98 136,127 141,153 L 146,157 C 143,130 152,100 149,78 Z',
+                        'M 152,60 Q 160,90 155,130 Q 152,150 156,166 M 145,70 Q 150,100 145,140')
+                        + `<path d="M 160,70 Q 163,92 160,115" fill="none" stroke="${t.shine}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`
+                        + backHair(t,
+                            'M 58,70 C 50,84 50,104 56,118 L 144,118 C 150,104 150,84 142,70 C 130,44 70,44 58,70 Z',
+                            'M 62,98 C 60,108 60,114 63,118 L 137,118 C 140,114 140,108 138,98 Z');
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    return sideLocks(t, 118) + animeBangs(t, BANGS_SWEPT)
+                        + `<ellipse cx="129" cy="46" rx="8.5" ry="5.5" transform="rotate(-25 129 46)" fill="${PINK.base}" ${ln(PINK, 0.8)}/>
+                        <path d="M 124,44 Q 126,49 125,51 M 129,41.5 Q 131,46 130,50 M 134,40 Q 135,44 135,47" fill="none" stroke="${PINK.line}" stroke-width="0.6" opacity="0.6"/>
+                        <path d="M 123,45 Q 126,41 131,40" fill="none" stroke="${PINK.shine}" stroke-width="1.2" stroke-linecap="round"/>`;
+                }
             },
             {
                 id: 'hair6',
-                name: 'ضفائر طويلة جانبية',
-                backSvg: (color) => `<g>
-                    <!-- Left braid -->
-                    <path d="M 62,88 C 52,100 44,122 42,148 C 40,160 44,168 48,165 C 46,150 50,128 56,108 C 60,94 64,82 62,88 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 52,108 C 44,122 42,148 46,162 C 50,158 50,138 56,118 Z" fill="${color}" stroke="#3a2a18" stroke-width="0.8" opacity="0.7"/>
-                    <!-- Right braid -->
-                    <path d="M 138,88 C 148,100 156,122 158,148 C 160,160 156,168 152,165 C 154,150 150,128 144,108 C 140,94 136,82 138,88 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 148,108 C 156,122 158,148 154,162 C 150,158 150,138 144,118 Z" fill="${color}" stroke="#3a2a18" stroke-width="0.8" opacity="0.7"/>
-                    <!-- Crown cap -->
-                    <path d="M 66,66 C 52,64 46,80 46,100 C 46,114 52,124 60,128 L 140,128 C 148,124 154,114 154,100 C 154,80 148,64 134,66 C 118,48 82,48 66,66 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <path d="M 65,72 C 58,82 56,100 58,114 C 60,106 62,90 65,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 135,72 C 142,82 144,100 142,114 C 140,106 138,90 135,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 67,70 Q 100,58 133,70 Q 100,74 67,70 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                </g>`
+                name: 'ضفيرتين طويلتين بشرائط',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 58,70 C 50,84 50,104 56,120 L 144,120 C 150,104 150,84 142,70 C 130,44 70,44 58,70 Z',
+                        'M 62,98 C 60,108 60,116 63,120 L 137,120 C 140,116 140,108 138,98 Z');
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    const pts = [[58, 106], [56.5, 116], [55.5, 126], [54.5, 136], [53.5, 146], [52.5, 156], [51.5, 166]];
+                    const braid = `<path d="M 61,80 C 56,90 55,99 57,108 L 65,106 C 64,97 65,88 67,81 Z" fill="${t.base}" ${ln(t, 0.9)}/>`
+                        + braidChain(t, pts)
+                        + `<path d="M 47,174 Q 49,186 47,194 Q 51,188 52,195 Q 53,188 56,194 Q 55,184 56,174 Z" fill="${t.base}" ${ln(t, 0.9)}/>
+                        <path d="M 52,176 Q 53,186 52,193" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.5"/>`
+                        + bow(51.5, 172, 0.55, PINK);
+                    return mirror(braid) + animeBangs(t, BANGS_FULL);
+                }
             },
             {
                 id: 'hair7',
-                name: 'قصة بوي قصيرة كاجوال',
-                backSvg: (color) => `<g>
-                    <!-- Short back cap ending above shoulders -->
-                    <path d="M 66,66 C 52,64 46,80 46,100 C 46,110 50,118 56,120 L 144,120 C 150,118 154,110 154,100 C 154,80 148,64 134,66 C 118,48 82,48 66,66 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <path d="M 66,66 C 52,64 46,80 46,100 C 46,110 50,118 56,120 L 144,120 C 150,118 154,110 154,100 C 154,80 148,64 134,66 C 118,48 82,48 66,66 Z" fill="url(#shadowOverlay)" opacity="0.3"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <!-- Short spiky / tousled front bang -->
-                    <path d="M 67,70 C 72,58 82,56 88,66 C 90,58 96,54 100,54 C 104,54 110,58 112,66 C 118,56 128,58 133,70 Q 118,80 100,78 Q 82,80 67,70 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 70,66 Q 100,56 130,66 Q 100,60 70,66 Z" fill="white" opacity="0.25"/>
-                </g>`
+                name: 'قصة قصيرة شقية مع خصلة أنمي',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 60,72 C 53,84 53,100 57,112 L 62,118 L 66,112 L 70,117 L 74,112 L 126,112 L 130,117 L 134,112 L 138,118 L 143,112 C 147,100 147,84 140,72 C 130,46 70,46 60,72 Z',
+                        'M 62,96 C 61,104 61,110 63,114 L 137,114 C 139,110 139,104 138,96 Z');
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    return sideLocks(t, 106) + animeBangs(t, BANGS_SPIKY)
+                        + `<path d="M 99,42 C 101,30 112,26 116,32 C 110,30 104,34 102,42 Z" fill="${t.base}" ${ln(t, 0.9)}/>`;
+                }
             },
             {
                 id: 'hair8',
-                name: 'جدائل تاج (ضفيرة دائرية)',
-                backSvg: (color) => `<g>
-                    <!-- Back hair cap -->
-                    <path d="M 66,66 C 50,64 44,82 44,102 C 44,116 50,126 58,130 L 142,130 C 150,126 156,116 156,102 C 156,82 150,64 134,66 C 118,48 82,48 66,66 Z" fill="${color}" stroke="#3a2a18" stroke-width="1.2"/>
-                    <path d="M 66,66 C 50,64 44,82 44,102 C 44,116 50,126 58,130 L 142,130 C 150,126 156,116 156,102 C 156,82 150,64 134,66 C 118,48 82,48 66,66 Z" fill="url(#shadowOverlay)" opacity="0.3"/>
-                </g>`,
-                frontSvg: (color) => `<g>
-                    <!-- Crown braid band across top of head -->
-                    <path d="M 68,68 Q 100,56 132,68 Q 100,62 68,68 Z" fill="${color}" stroke="#3a2a18" stroke-width="2"/>
-                    <!-- Braid segments texture -->
-                    <path d="M 72,67 Q 78,62 84,67 Q 90,62 96,67 Q 102,62 108,67 Q 114,62 120,67 Q 126,62 132,67" stroke="#3a2a18" stroke-width="1.2" fill="none" opacity="0.5"/>
-                    <!-- Side strands -->
-                    <path d="M 66,72 C 58,84 56,104 58,118 C 60,108 62,90 65,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <path d="M 134,72 C 142,84 144,104 142,118 C 140,108 138,90 135,80 Z" fill="${color}" stroke="#3a2a18" stroke-width="1"/>
-                    <!-- Flowers on braid -->
-                    <circle cx="84" cy="66" r="4" fill="#ff4081" stroke="#c0005a" stroke-width="0.8"/>
-                    <circle cx="116" cy="66" r="4" fill="#ff4081" stroke="#c0005a" stroke-width="0.8"/>
-                    <circle cx="100" cy="60" r="4" fill="#ff4081" stroke="#c0005a" stroke-width="0.8"/>
-                </g>`
+                name: 'ضفيرة تاج مع ورود',
+                backSvg: (c) => {
+                    const t = tone(c);
+                    return backHair(t,
+                        'M 58,68 C 47,80 45,104 47,126 Q 50,140 61,136 Q 66,145 74,137 L 126,137 Q 134,145 139,136 Q 150,140 153,126 C 155,104 153,80 142,68 C 130,44 70,44 58,68 Z',
+                        'M 62,98 C 60,114 60,128 64,134 L 136,134 C 140,128 140,114 138,98 Z',
+                        'M 52,96 Q 50,115 53,132 M 148,96 Q 150,115 147,132');
+                },
+                frontSvg: (c) => {
+                    const t = tone(c);
+                    const P0 = [64, 73], P1 = [100, 29], P2 = [136, 73];
+                    const pts = [];
+                    for (let i = 0; i <= 10; i++) {
+                        const s = i / 10, a = (1 - s) * (1 - s), b = 2 * (1 - s) * s, e = s * s;
+                        const x = a * P0[0] + b * P1[0] + e * P2[0], y = a * P0[1] + b * P1[1] + e * P2[1];
+                        const dx = 2 * (1 - s) * (P1[0] - P0[0]) + 2 * s * (P2[0] - P1[0]);
+                        const dy = 2 * (1 - s) * (P1[1] - P0[1]) + 2 * s * (P2[1] - P1[1]);
+                        pts.push([Math.round(x * 10) / 10, Math.round(y * 10) / 10, Math.atan2(dy, dx) * 180 / Math.PI + 90]);
+                    }
+                    return sideLocks(t, 128) + animeBangs(t, BANGS_PART, { ring: false }) + braidChain(t, pts)
+                        + [2, 5, 8].map(k => flower(pts[k][0], pts[k][1], 2.6, '#ff8fb5', '#ffe066')).join('');
+                }
             }
         ],
         tops: {
             tshirt: [
-                { 
-                    id: 'top1', 
-                    name: 'بلوزة الكشكشة الوردية الأنيقة', 
-                    svg: (color) => `<g>
-                        <path d="M 76,128 C 84,124 116,124 124,128 L 126,175 C 126,175 100,182 74,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 76,128 C 84,124 116,124 124,128 L 126,175 C 126,175 100,182 74,175 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 76,128 C 84,124 116,124 124,128 L 126,175 C 126,175 100,182 74,175 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 78,128 C 66,134 60,150 64,158 C 68,162 76,155 76,155 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 122,128 C 134,134 140,150 136,158 C 132,162 124,155 124,155 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 86,125 C 88,135 112,135 114,125 C 114,125 108,138 100,138 C 92,138 86,125 86,125 Z" fill="#ffffff" stroke="#421a28" stroke-width="0.8"/>
-                        <circle cx="100" cy="136" r="2.5" fill="#d81b60"/>
-                        <path d="M 97,134 Q 95,138 97,142 M 103,134 Q 105,138 103,142" stroke="#d81b60" stroke-width="1.5" fill="none"/>
-                    </g>`
+                {
+                    id: 'top1',
+                    name: 'بلوزة كشكش بياقة وفيونكة',
+                    svg: (c) => {
+                        const t = tone(c);
+                        return sleevePuff(t, '#ffffff') + shirtBody(t)
+                            + `<path d="M 74,172 Q 77,180 80,176 Q 83,181 86,177 Q 89,182 92,177.5 Q 95,182 98,178 Q 101,183 104,178 Q 107,182 110,177.5 Q 113,182 116,177 Q 119,181 122,176 Q 125,180 126.5,174 L 125.8,170 Q 100,175 74.3,170 Z" fill="${t.light}" ${ln(t, 0.8)}/>`
+                            + mirror(`<path d="M 100,129 Q 93,126 89,121.5 Q 84,128 88,134 Q 95,136 100,129 Z" fill="#ffffff" ${ln(WHITE, 0.8)}/>
+                                <path d="M 100,129 Q 95,133 89,132.5 Q 95,135.5 100,129 Z" fill="${WHITE.shadow}"/>`)
+                            + bow(100, 130, 0.75, PINK)
+                            + `<circle cx="100" cy="146" r="1.4" fill="#ffffff" ${ln(t, 0.5)}/><circle cx="100" cy="157" r="1.4" fill="#ffffff" ${ln(t, 0.5)}/>`;
+                    }
                 },
-                { 
-                    id: 'top2', 
-                    name: 'بلوزة الرقبة بحلقة هولتر', 
-                    svg: (color) => `<g>
-                        <path d="M 88,123 L 112,123 L 124,175 C 124,175 100,182 76,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 88,123 L 112,123 L 124,175 C 124,175 100,182 76,175 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 88,123 L 112,123 L 124,175 C 124,175 100,182 76,175 Z" fill="url(#shadowOverlay)"/>
-                        <circle cx="100" cy="129" r="6.2" fill="url(#goldGrad)" stroke="#421a28" stroke-width="1"/>
-                        <circle cx="100" cy="129" r="3.2" fill="${color}"/>
-                    </g>`
+                {
+                    id: 'top2',
+                    name: 'بلوزة هولتر بحلقة ذهبية',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const d = 'M 84,131 C 90,128 110,128 116,131 C 120,146 121,160 124,177 Q 100,182 76,177 C 79,160 80,146 84,131 Z';
+                        const gathers = `<path d="M 96,136 Q 90,147 86,162 M 104,136 Q 110,147 114,162 M 100,138 L 100,158" fill="none" stroke="${t.line}" stroke-width="0.7" opacity="0.5"/>`;
+                        return mirror(`<path d="M 87,131 L 95,115 L 98.5,116 L 93,131 Z" fill="${t.base}" ${ln(t, 0.8)}/>`)
+                            + shirtBody(t, d, gathers)
+                            + `<circle cx="100" cy="132.5" r="4.6" fill="none" stroke="${GOLD.line}" stroke-width="3.4"/>
+                            <circle cx="100" cy="132.5" r="4.6" fill="none" stroke="${GOLD.base}" stroke-width="2.2"/>
+                            <path d="M 96.5,130 Q 98,128.3 100,128.2" fill="none" stroke="${GOLD.shine}" stroke-width="1" stroke-linecap="round"/>`;
+                    }
                 },
-                { 
-                    id: 'top3', 
-                    name: 'تي شيرت رياضي مع قلب', 
-                    svg: (color) => `<g>
-                        <path d="M 74,127 C 84,123 116,123 126,127 L 128,175 L 72,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 74,127 C 84,123 116,123 126,127 L 128,175 L 72,175 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 74,127 C 84,123 116,123 126,127 L 128,175 L 72,175 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 74,127 L 62,148 L 74,152 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 126,127 L 138,148 L 126,152 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 96,145 Q 100,141 104,145 Q 108,149 100,157 Q 92,149 96,145 Z" fill="#ffffff" stroke="#421a28" stroke-width="0.5"/>
-                    </g>`
+                {
+                    id: 'top3',
+                    name: 'تيشيرت رياضي بقلب',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const ac = t.isLight ? PINK.base : '#ffffff';
+                        const print = `<path d="M 100,163 C 90,155 89.5,147 94.5,145.5 C 97.5,144.7 99.5,147 100,149 C 100.5,147 102.5,144.7 105.5,145.5 C 110.5,147 110,155 100,163 Z" fill="${ac}" ${ln(t, 0.7)}/>
+                            <path d="M 94,149 Q 95,147 97,147.3" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="round" opacity="0.8"/>
+                            <path d="M 79.5,134 L 77.6,176 M 120.5,134 L 122.6,176" fill="none" stroke="${ac}" stroke-width="1.8"/>`;
+                        return sleeveShort(t, ac) + shirtBody(t, SHIRT, print)
+                            + `<path d="M 90,122 Q 100,131 110,122 L 112,122.6 Q 100,134.5 88,122.6 Z" fill="${ac}" ${ln(t, 0.7)}/>`;
+                    }
                 },
-                { 
-                    id: 'top4', 
-                    name: 'تيشيرت بطبعة إيموجي ضاحك', 
-                    svg: (color) => `<g>
-                        <path d="M 74,127 L 126,127 L 128,175 L 72,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 74,127 L 126,127 L 128,175 L 72,175 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 74,127 L 126,127 L 128,175 L 72,175 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 74,127 L 62,148 L 74,152 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 126,127 L 138,148 L 126,152 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <circle cx="100" cy="148" r="8" fill="url(#goldGrad)" stroke="#421a28" stroke-width="0.8"/>
-                        <circle cx="97.5" cy="146.5" r="1" fill="#2b2d42"/>
-                        <circle cx="102.5" cy="146.5" r="1" fill="#2b2d42"/>
-                        <path d="M 97,150 Q 100,153 103,150" stroke="#2b2d42" stroke-width="0.8" fill="none"/>
-                    </g>`
+                {
+                    id: 'top4',
+                    name: 'زي البحّار المدرسي (أنمي)',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const cc = t.isLight ? '#2b3a67' : '#ffffff', sc = t.isLight ? '#ffffff' : t.base;
+                        const ct = tone(cc);
+                        return sleeveShort(t, cc) + shirtBody(t)
+                            + mirror(`<path d="M 77.5,126.5 C 83,124 88,122.5 91,122 L 100,141 L 100,149.5 Z" fill="${cc}" ${ln(ct, 0.9)}/>
+                                <path d="M 80.5,126.8 L 99.2,145.6" fill="none" stroke="${sc}" stroke-width="1.3"/>
+                                <path d="M 91,122 L 100,141 L 100,144 L 90,124 Z" fill="${SHADE}" opacity="0.2"/>`)
+                            + `<path d="M 98,152 L 95,167 L 100,164 L 105,167 L 102,152 Z" fill="${RED.base}" ${ln(RED, 0.7)}/>`
+                            + bow(100, 149, 0.85, RED);
+                    }
                 },
-                { 
-                    id: 'top5', 
-                    name: 'تيشيرت الخطوط الأفقية الرياضي', 
-                    svg: (color) => `<g>
-                        <path d="M 74,127 L 126,127 L 128,175 L 72,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 74,127 L 126,127 L 128,175 L 72,175 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 74,127 L 126,127 L 128,175 L 72,175 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 74,127 L 62,148 L 74,152 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 126,127 L 138,148 L 126,152 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 73,138 L 127,138 L 127,143 L 73,143 Z" fill="#ffffff" opacity="0.65"/>
-                        <path d="M 72,152 L 128,152 L 128,157 L 72,157 Z" fill="#ffffff" opacity="0.65"/>
-                    </g>`
+                {
+                    id: 'top5',
+                    name: 'تيشيرت مخطط بحري',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const sc = t.isLight ? '#2b3a67' : '#ffffff';
+                        const stripes = `<path d="M 60,134 H 140 V 139 H 60 Z M 60,146 H 140 V 151 H 60 Z M 60,158 H 140 V 163 H 60 Z M 60,170 H 140 V 175 H 60 Z" fill="${sc}" opacity="0.9"/>`;
+                        return sleeveShort(t, sc) + shirtBody(t, SHIRT, stripes)
+                            + `<path d="M 90,122 Q 100,131 110,122 L 112,122.6 Q 100,134.5 88,122.6 Z" fill="${sc}" ${ln(t, 0.7)}/>`;
+                    }
                 },
-                { 
-                    id: 'top6', 
-                    name: 'بلوزة بنقاط النجوم وبأكمام', 
-                    svg: (color) => `<g>
-                        <path d="M 74,125 C 84,121 116,121 126,125 L 128,175 L 72,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 74,125 C 84,121 116,121 126,125 L 128,175 L 72,175 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 74,125 C 84,121 116,121 126,125 L 128,175 L 72,175 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 74,125 L 56,154 L 68,158 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 126,125 L 144,154 L 132,158 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <text x="82" y="146" font-size="8" fill="#ffffff" opacity="0.95">★</text>
-                        <text x="110" y="146" font-size="8" fill="#ffffff" opacity="0.95">★</text>
-                    </g>`
+                {
+                    id: 'top6',
+                    name: 'كارديجان بأكمام طويلة',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const inner = `<path d="M 66,170.5 Q 100,175.5 134,170.5 L 134,192 L 66,192 Z" fill="${t.shadow}"/>
+                            <path d="M 78,172 L 78,180 M 82,172.5 L 82,180 M 86,173 L 86,180 M 114,173 L 114,180 M 118,172.5 L 118,180 M 122,172 L 122,180" stroke="${t.line}" stroke-width="0.5" opacity="0.5"/>
+                            <path d="M 89.5,120 Q 100,131 110.5,120 L 107,190 L 93,190 Z" fill="#ffffff"/>
+                            <path d="M 89.5,120 Q 100,131 110.5,120 L 110.5,124 Q 100,135 89.5,124 Z" fill="${SHADE}" opacity="0.15"/>`;
+                        return sleeveLong(t) + shirtBody(t, SHIRT, inner)
+                            + `<path d="M 90,122.2 L 93.5,178.5 M 110,122.2 L 106.5,178.5" fill="none" ${ln(t, 0.9)}/>
+                            <circle cx="92.2" cy="140" r="1.3" fill="${t.light}" ${ln(t, 0.5)}/>
+                            <circle cx="92.8" cy="152" r="1.3" fill="${t.light}" ${ln(t, 0.5)}/>
+                            <circle cx="93.3" cy="164" r="1.3" fill="${t.light}" ${ln(t, 0.5)}/>`
+                            + mirror(`<path d="M 80,157 L 89,157 L 89.4,166 Q 85,167.5 80.5,166 Z" fill="none" ${ln(t, 0.7)}/>`);
+                    }
                 }
             ],
             jacket: [
-                { 
-                    id: 'top7', 
-                    name: 'فستان صيفي فلورال متوسط', 
-                    svg: (color) => `<g>
-                        <!-- Top Part -->
-                        <path d="M 76,128 C 84,124 116,124 124,128 L 125,175 H 75 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 76,128 C 84,124 116,124 124,128 L 125,175 H 75 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 76,128 C 84,124 116,124 124,128 L 125,175 H 75 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 78,128 C 66,134 60,150 64,158 C 68,162 76,155 76,155 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 122,128 C 134,134 140,150 136,158 C 132,162 124,155 124,155 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <!-- Flared Skirt of the dress covering bottoms -->
-                        <path d="M 75,175 L 125,175 L 142,225 L 58,225 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 75,175 L 125,175 L 142,225 L 58,225 Z" fill="url(#shadowOverlay)"/>
-                        <!-- Floral dots -->
-                        <circle cx="76" cy="190" r="2.5" fill="#ffffff" opacity="0.9"/>
-                        <circle cx="124" cy="190" r="2.5" fill="#ffffff" opacity="0.9"/>
-                        <circle cx="100" cy="205" r="3" fill="#ffffff" opacity="0.9"/>
-                        <circle cx="85" cy="215" r="2.5" fill="#ffffff" opacity="0.9"/>
-                        <circle cx="115" cy="215" r="2.5" fill="#ffffff" opacity="0.9"/>
-                    </g>`
+                {
+                    id: 'top7',
+                    name: 'فستان صيفي مورّد بأكمام منفوخة',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const bodice = 'M 80,125 C 84,123 88,122 91,122 Q 100,132 109,122 C 112,122 116,123 120,125 C 122,140 121,156 120,170 Q 100,174 80,170 C 79,156 78,140 80,125 Z';
+                        const skirt = 'M 80,168 Q 100,172 120,168 C 128,186 136,204 145,226 Q 134,232 123,228 Q 112,234 100,229 Q 88,234 77,228 Q 66,232 55,226 C 64,204 72,186 80,168 Z';
+                        const sid = gdId('dress');
+                        const petal = t.isLight ? '#ff8fb5' : '#ffffff';
+                        const sash = t.isLight ? PINK : WHITE;
+                        let prints = '';
+                        [[74, 196], [92, 188], [110, 200], [126, 192], [84, 214], [102, 216], [120, 216], [66, 220], [136, 220], [100, 182]]
+                            .forEach(p => { prints += flower(p[0], p[1], 1.7, petal, '#ffd54a'); });
+                        return sleevePuff(t, sash.base)
+                            + `<defs><clipPath id="${sid}"><path d="${skirt}"/></clipPath></defs>
+                            <path d="${skirt}" fill="${t.base}"/>
+                            <g clip-path="url(#${sid})">
+                                ${prints}
+                                <path d="M 92,170 Q 88,200 84,234 L 93,234 Q 93,200 95,170 Z M 107,170 Q 111,200 115,234 L 124,234 Q 118,200 110,170 Z M 116,169 Q 128,200 140,234 L 152,234 Q 136,196 120,167 Z" fill="${SHADE}" opacity="0.22"/>
+                                <path d="M 84,171 Q 75,200 64,226" fill="none" stroke="${t.shine}" stroke-width="2.2" stroke-linecap="round" opacity="0.5"/>
+                            </g>
+                            <path d="${skirt}" fill="none" ${ln(t)}/>
+                            <path d="M 58,221 Q 66,226 77,223 Q 88,228 100,224 Q 112,228 123,223 Q 134,226 142,221" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.5"/>`
+                            + shirtBody(t, bodice)
+                            + `<path d="M 79.6,164.5 Q 100,169.5 120.4,164.5 L 120.6,171 Q 100,176 79.4,171 Z" fill="${sash.base}" ${ln(sash, 0.8)}/>`
+                            + bow(100, 168, 0.7, sash);
+                    }
                 },
-                { 
-                    id: 'top8', 
-                    name: 'فستان الأميرة الفاخر المنفوش', 
-                    svg: (color) => `<g>
-                        <!-- Top corset part -->
-                        <path d="M 82,125 L 118,125 L 122,175 H 78 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 82,125 L 118,125 L 122,175 H 78 Z" fill="url(#highlightOverlay)"/>
-                        <path d="M 82,125 L 118,125 L 122,175 H 78 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 74,127 C 84,134 116,134 126,127" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                        <!-- Ballroom gown -->
-                        <path d="M 78,175 L 122,175 C 136,195 152,215 152,246 C 110,250 90,250 48,246 C 48,215 64,195 78,175 Z" fill="${color}" stroke="#421a28" stroke-width="1"/>
-                        <path d="M 78,175 L 122,175 C 136,195 152,215 152,246 C 110,250 90,250 48,246 C 48,215 64,195 78,175 Z" fill="url(#shadowOverlay)"/>
-                        <path d="M 48,246 Q 60,242 74,246 Q 88,242 102,246 Q 116,242 130,246 Q 142,242 152,246" stroke="#ffffff" stroke-width="3" fill="none"/>
-                    </g>`
+                {
+                    id: 'top8',
+                    name: 'فستان الأميرة الملكي المنفوش',
+                    svg: (c) => {
+                        const t = tone(c);
+                        const bodice = 'M 79,134 Q 89,129 100,135 Q 111,129 121,134 C 122,148 121,160 120,171 Q 100,175 80,171 C 79,160 78,148 79,134 Z';
+                        const skirt = 'M 80,169 Q 100,173 120,169 C 138,186 152,206 158,230 Q 100,239 42,230 C 48,206 62,186 80,169 Z';
+                        const ruffle = 'M 42,228 Q 100,237 158,228 L 160,244 Q 155,249 149,245 Q 143,250 137,246 Q 131,251 124,247 Q 118,251 112,247 Q 106,252 100,248 Q 94,252 88,247 Q 82,251 76,247 Q 69,251 63,246 Q 57,250 51,245 Q 45,249 40,244 Z';
+                        const sid = gdId('gown'), rid = gdId('ruffle');
+                        const accent = t.isLight ? PINK : WHITE;
+                        const lace = `<path d="M 96,141 L 104,147 M 104,141 L 96,147 M 96,149 L 104,155 M 104,149 L 96,155 M 96,157 L 104,163 M 104,157 L 96,163" fill="none" stroke="${GOLD.base}" stroke-width="0.9"/>`;
+                        return `<defs><clipPath id="${sid}"><path d="${skirt}"/></clipPath><clipPath id="${rid}"><path d="${ruffle}"/></clipPath></defs>
+                            <path d="${skirt}" fill="${t.base}"/>
+                            <g clip-path="url(#${sid})">
+                                <path d="M 94,171 Q 86,200 76,236 L 88,236 Q 94,200 97,171 Z M 106,171 Q 114,200 124,236 L 134,236 Q 120,198 110,171 Z M 118,170 Q 136,198 150,236 L 165,236 Q 146,190 121,168 Z" fill="${SHADE}" opacity="0.22"/>
+                                <path d="M 84,172 Q 70,200 56,228" fill="none" stroke="${t.shine}" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
+                                ${sparkle(70, 206, 2.6)}${sparkle(100, 196, 2.2)}${sparkle(128, 214, 2.6)}${sparkle(88, 222, 2)}${sparkle(116, 186, 1.8)}${sparkle(62, 222, 1.8)}
+                            </g>
+                            <path d="${skirt}" fill="none" ${ln(t)}/>
+                            <path d="${ruffle}" fill="${t.light}"/>
+                            <g clip-path="url(#${rid})">
+                                <path d="M 112,228 L 170,228 L 170,255 L 118,255 Z" fill="${SHADE}" opacity="0.18"/>
+                                <path d="M 52,232 L 51,244 M 64,233 L 63,245 M 76,234 L 76,246 M 88,234.5 L 88,247 M 100,235 L 100,247.5 M 112,234.5 L 112,247 M 124,234 L 124,246 M 136,233 L 137,245 M 148,232 L 149,244" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.45"/>
+                            </g>
+                            <path d="${ruffle}" fill="none" ${ln(t, 0.9)}/>`
+                            + mirror(`<path d="M 81,136 C 72,130 62,134 61,144 C 60,151 66,155 72,153 C 77,151 80,146 82,141 Z" fill="${t.base}" ${ln(t)}/>
+                                <path d="M 61.5,147 C 63,152 67,154 72,153 C 76,151.5 79,148 80.5,144 Q 72,151 61.5,147 Z" fill="${t.shadow}"/>
+                                <path d="M 66,135 Q 68,143 66,151 M 73,133 Q 75,142 74,151" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.5"/>
+                                <path d="M 68,134 Q 63,137 62.5,143" fill="none" stroke="${t.shine}" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>`)
+                            + shirtBody(t, bodice, lace)
+                            + `<path d="M 79,134 Q 89,129 100,135 Q 111,129 121,134" fill="none" stroke="${accent.base}" stroke-width="2.2" stroke-linecap="round"/>
+                            <path d="M 79.6,166 Q 100,170.5 120.4,166 L 120.6,171.5 Q 100,176 79.4,171.5 Z" fill="${GOLD.base}" stroke="${GOLD.line}" stroke-width="0.7"/>`
+                            + bow(100, 170, 0.8, accent)
+                            + `<circle cx="100" cy="137" r="1.8" fill="#ff4f8b" stroke="#a3204e" stroke-width="0.5"/>`;
+                    }
                 }
             ]
         },
         bottoms: [
-            { 
-                id: 'bottom1', 
-                name: 'شورت جينز أبيض صيفي', 
-                svg: (color) => `<g>
-                    <path d="M 73,174 L 127,174 C 130,196 128,212 128,212 L 105,212 L 100,192 L 95,212 L 72,212 C 72,212 70,196 73,174 Z" fill="${color}" stroke="#1e2430" stroke-width="1"/>
-                    <path d="M 73,174 L 127,174 C 130,196 128,212 128,212 L 105,212 L 100,192 L 95,212 L 72,212 C 72,212 70,196 73,174 Z" fill="url(#shadowOverlay)"/>
-                    <path d="M 76,174 Q 82,185 78,192" fill="none" stroke="#1e2430" stroke-width="1"/>
-                    <path d="M 124,174 Q 118,185 122,192" fill="none" stroke="#1e2430" stroke-width="1"/>
-                    <line x1="100" y1="174" x2="100" y2="192" stroke="#1e2430" stroke-width="1"/>
-                </g>`
+            {
+                id: 'bottom1',
+                name: 'شورت جينز بثنيات',
+                svg: (c) => {
+                    const t = tone(c);
+                    const st = `<path d="M 77,182 C 76.5,190 76.5,196 76.8,201 M 123,182 C 123.5,190 123.5,196 123.2,201" fill="none" stroke="${GOLD.shadow}" stroke-width="0.6" stroke-dasharray="1.6 1.2"/>`;
+                    return pantsBase(t, 9.5, 206, st)
+                        + mirror(`<path d="M 76.3,201 L 95.6,201 L 95.6,207.5 Q 86,209.5 76.6,207.5 Z" fill="${t.light}" ${ln(t, 0.7)}/>
+                            <path d="M 77,204 L 95,204" stroke="${t.line}" stroke-width="0.5" opacity="0.4"/>`);
+                }
             },
-            { 
-                id: 'bottom2', 
-                name: 'شورت رياضي قصير مريح', 
-                svg: (color) => `<g>
-                    <path d="M 74,174 L 126,174 L 128,206 L 104,206 L 100,190 L 96,206 L 72,206 Z" fill="${color}" stroke="#1e2430" stroke-width="1"/>
-                    <path d="M 74,174 L 126,174 L 128,206 L 104,206 L 100,190 L 96,206 L 72,206 Z" fill="url(#shadowOverlay)"/>
-                    <path d="M 73,180 L 73,200" stroke="#ffffff" stroke-width="2"/>
-                    <path d="M 127,180 L 127,200" stroke="#ffffff" stroke-width="2"/>
-                </g>`
+            {
+                id: 'bottom2',
+                name: 'تنورة بليسيه مدرسية (أنمي)',
+                svg: (c) => {
+                    const t = tone(c);
+                    const d = 'M 75,174 L 125,174 L 135,211 Q 100,216 65,211 Z';
+                    const id = gdId('skirt');
+                    let pleats = '', lines = '';
+                    for (let i = 0; i < 10; i++) {
+                        const x1 = 75 + i * 5, x2 = 65 + i * 7, x3 = 75 + (i + 1) * 5, x4 = 65 + (i + 1) * 7;
+                        if (i % 2) pleats += `M ${x1},174 L ${x3},174 L ${x4},218 L ${x2},218 Z `;
+                        if (i > 0) lines += `M ${x1},179 L ${x2},214 `;
+                    }
+                    return `<defs><clipPath id="${id}"><path d="${d}"/></clipPath></defs>
+                        <path d="${d}" fill="${t.base}"/>
+                        <g clip-path="url(#${id})">
+                            <path d="${pleats}" fill="${SHADE}" opacity="0.18"/>
+                            <path d="M 112,174 L 140,174 L 140,220 L 122,220 Z" fill="${SHADE}" opacity="0.15"/>
+                            <path d="${lines}" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.6"/>
+                            <path d="M 60,207.5 Q 100,212.5 140,207.5" fill="none" stroke="${t.isLight ? '#2b3a67' : '#ffffff'}" stroke-width="1.3" opacity="0.8"/>
+                        </g>
+                        <path d="${d}" fill="none" ${ln(t)}/>
+                        <path d="M 75,174 L 125,174 L 125.6,179.5 Q 100,181.5 74.4,179.5 Z" fill="${t.shadow}" ${ln(t, 0.8)}/>`;
+                }
             },
-            { 
-                id: 'bottom3', 
-                name: 'بنطال جينز كاجوال طويل', 
-                svg: (color) => `<g>
-                    <path d="M 74,174 L 126,174 L 129,242 C 129,242 118,245 112,242 L 104,196 L 96,196 L 88,242 C 82,245 71,242 71,242 Z" fill="${color}" stroke="#101c2e" stroke-width="1"/>
-                    <path d="M 74,174 L 126,174 L 129,242 C 129,242 118,245 112,242 L 104,196 L 96,196 L 88,242 C 82,245 71,242 71,242 Z" fill="url(#shadowOverlay)"/>
-                    <line x1="100" y1="174" x2="100" y2="196" stroke="#101c2e" stroke-width="1"/>
-                </g>`
+            {
+                id: 'bottom3',
+                name: 'بنطال جينز كاجوال',
+                svg: (c) => {
+                    const t = tone(c);
+                    const st = `<path d="M 76.5,182 C 75.5,200 79,215 79.5,238 M 123.5,182 C 124.5,200 121,215 120.5,238 M 80,236 L 92,236 M 108,236 L 120,236" fill="none" stroke="${GOLD.shadow}" stroke-width="0.6" stroke-dasharray="1.6 1.2"/>`;
+                    return pantsBase(t, 8, 240, st);
+                }
             },
-            { 
-                id: 'bottom4', 
-                name: 'بنطال الشارع الفضفاض بجيوب', 
-                svg: (color) => `<g>
-                    <path d="M 74,174 L 126,174 L 132,240 C 132,240 120,244 114,240 L 104,196 L 96,196 L 86,240 C 80,244 68,240 68,240 Z" fill="${color}" stroke="#1a221a" stroke-width="1"/>
-                    <path d="M 74,174 L 126,174 L 132,240 C 132,240 120,244 114,240 L 104,196 L 96,196 L 86,240 C 80,244 68,240 68,240 Z" fill="url(#shadowOverlay)"/>
-                    <rect x="70" y="195" width="10" height="12" rx="2" fill="${color}" stroke="#1a221a" stroke-width="0.8"/>
-                    <rect x="120" y="195" width="10" height="12" rx="2" fill="${color}" stroke="#1a221a" stroke-width="0.8"/>
-                </g>`
+            {
+                id: 'bottom4',
+                name: 'بنطال كارغو بجيوب',
+                svg: (c) => {
+                    const t = tone(c);
+                    return pantsBase(t, 10.5, 240)
+                        + mirror(`<path d="M 76.5,199 L 84.5,199 L 85,213 Q 81,215 77,213 Z" fill="${t.base}" ${ln(t, 0.7)}/>
+                            <path d="M 76.2,197.5 L 84.8,197.5 L 85,202 L 76.4,202 Z" fill="${t.shadow}" ${ln(t, 0.7)}/>
+                            <circle cx="80.7" cy="200.3" r="0.8" fill="${t.line}"/>`);
+                }
             },
-            { 
-                id: 'bottom5', 
-                name: 'بنطال ليجنز رياضي ضيق', 
-                svg: (color) => `<g>
-                    <path d="M 76,174 L 124,174 L 126,242 C 126,242 118,243 113,242 L 103,196 L 97,196 L 87,242 C 82,243 74,242 74,242 Z" fill="${color}" stroke="#101c2e" stroke-width="1"/>
-                    <path d="M 76,174 L 124,174 L 126,242 C 126,242 118,243 113,242 L 103,196 H 97 L 87,242 C 82,243 74,242 74,242 Z" fill="url(#shadowOverlay)"/>
-                </g>`
+            {
+                id: 'bottom5',
+                name: 'ليجنز رياضي ضيق',
+                svg: (c) => {
+                    const t = tone(c);
+                    return pantsBase(t, 6.5, 240, '', { noBand: true })
+                        + `<path d="M 83,205 Q 82,220 83,236 M 111,205 Q 110,220 111,236" fill="none" stroke="${t.shine}" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/>`;
+                }
             },
-            { 
-                id: 'bottom6', 
-                name: 'بنطال واسع الساق مريح', 
-                svg: (color) => `<g>
-                    <path d="M 74,174 L 126,174 L 134,242 C 134,242 120,246 112,242 L 104,196 L 96,196 L 88,242 C 80,246 66,242 66,242 Z" fill="${color}" stroke="#1e2225" stroke-width="1"/>
-                    <path d="M 74,174 L 126,174 L 134,242 C 134,242 120,246 112,242 L 104,196 L 96,196 L 88,242 C 80,246 66,242 66,242 Z" fill="url(#shadowOverlay)"/>
-                </g>`
+            {
+                id: 'bottom6',
+                name: 'بنطال واسع منساب',
+                svg: (c) => {
+                    const t = tone(c);
+                    const folds = `<path d="M 80,200 Q 78,220 76,242 M 120,200 Q 122,220 124,242 M 92,212 Q 94,228 95,242 M 108,212 Q 106,228 105,242" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.5"/>`;
+                    return pantsBase(t, 13, 242, folds);
+                }
             },
-            { 
-                id: 'bottom7', 
-                name: 'بنطال الكابري القصير الصيفي', 
-                svg: (color) => `<g>
-                    <path d="M 74,174 L 126,174 L 127,222 C 127,222 118,224 113,222 L 104,194 L 96,194 L 87,222 C 82,224 73,222 73,222 Z" fill="${color}" stroke="#2e1c16" stroke-width="1"/>
-                    <path d="M 74,174 L 126,174 L 127,222 C 127,222 118,224 113,222 L 104,194 L 96,194 L 87,222 C 82,224 73,222 73,222 Z" fill="url(#shadowOverlay)"/>
-                </g>`
+            {
+                id: 'bottom7',
+                name: 'بنطال كابري صيفي',
+                svg: (c) => {
+                    const t = tone(c);
+                    return pantsBase(t, 8, 222)
+                        + mirror(`<path d="M 77.6,217 L 94.4,217 L 94.4,223 Q 86,225 77.8,223 Z" fill="${t.light}" ${ln(t, 0.7)}/>`);
+                }
             },
-            { 
-                id: 'bottom8', 
-                name: 'بنطال مخطط كلاسيكي بكسرات', 
-                svg: (color) => `<g>
-                    <path d="M 74,174 L 126,174 L 129,242 C 129,242 118,245 112,242 L 104,196 H 96 L 88,242 C 82,245 71,242 71,242 Z" fill="${color}" stroke="#101c2e" stroke-width="1"/>
-                    <path d="M 74,174 L 126,174 L 129,242 C 129,242 118,245 112,242 L 104,196 H 96 L 88,242 C 82,245 71,242 71,242 Z" fill="url(#shadowOverlay)"/>
-                    <line x1="84" y1="178" x2="80" y2="238" stroke="#ffffff" stroke-width="0.8" opacity="0.6"/>
-                    <line x1="116" y1="178" x2="120" y2="238" stroke="#ffffff" stroke-width="0.8" opacity="0.6"/>
-                </g>`
+            {
+                id: 'bottom8',
+                name: 'بنطال مقلّم كلاسيكي',
+                svg: (c) => {
+                    const t = tone(c);
+                    const sc = t.isLight ? t.deep : '#ffffff';
+                    let stripes = '';
+                    for (let x = 72; x <= 128; x += 4) stripes += `M ${x},174 L ${x + (x < 100 ? -2 : 2)},244 `;
+                    const extra = `<path d="${stripes}" fill="none" stroke="${sc}" stroke-width="0.5" opacity="0.45"/>
+                        <path d="M 86,183 L 86,239 M 114,183 L 114,239" fill="none" stroke="${t.line}" stroke-width="0.6" opacity="0.6"/>`;
+                    return pantsBase(t, 8.5, 240, extra);
+                }
             }
         ],
         shoes: [
             {
                 id: 'shoe1',
-                name: 'حفاية الصيف البسيطة (سلايدر)',
-                svg: (color) => `<g>
-                    <ellipse cx="86" cy="242" rx="9" ry="3.2" fill="#ffffff" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 77,241 Q 86,236 95,241" stroke="${color}" stroke-width="4.2" fill="none" stroke-linecap="round"/>
-                    <ellipse cx="114" cy="242" rx="9" ry="3.2" fill="#ffffff" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 105,241 Q 114,236 123,241" stroke="${color}" stroke-width="4.2" fill="none" stroke-linecap="round"/>
-                </g>`
+                name: 'صندل سلايد صيفي',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 76.5,243 Q 76,240.5 79,240.5 L 93,240.5 Q 96,240.5 95.5,243 Q 95,246.5 86,246.5 Q 77,246.5 76.5,243 Z" fill="#ffffff" ${ln(WHITE, 0.7)}/>
+                        <path d="M 77.5,240.5 C 78,234.5 94,234.5 94.5,240.5 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 87,235.6 C 91,236 93.5,237.8 94.5,240.5 L 90,240.5 Z" fill="${SHADE}" opacity="0.22"/>
+                        <path d="M 80,238.5 Q 83,236.3 87,236.2" fill="none" stroke="${t.shine}" stroke-width="1.2" stroke-linecap="round"/>`);
+                }
             },
             {
                 id: 'shoe2',
-                name: 'شبشب الأرانب المنفوش الكيوت',
-                svg: (color) => `<g>
-                    <ellipse cx="86" cy="241" rx="10.5" ry="5.5" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <ellipse cx="80" cy="235" rx="2" ry="4.5" fill="${color}" stroke="#2e1c16" stroke-width="0.5"/>
-                    <ellipse cx="84" cy="235" rx="2" ry="4.5" fill="${color}" stroke="#2e1c16" stroke-width="0.5"/>
-                    <circle cx="83" cy="241" r="1" fill="#111"/>
-                    <circle cx="87" cy="241" r="1" fill="#111"/>
-                    <ellipse cx="114" cy="241" rx="10.5" ry="5.5" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <ellipse cx="108" cy="235" rx="2" ry="4.5" fill="${color}" stroke="#2e1c16" stroke-width="0.5"/>
-                    <ellipse cx="112" cy="235" rx="2" ry="4.5" fill="${color}" stroke="#2e1c16" stroke-width="0.5"/>
-                    <circle cx="111" cy="241" r="1" fill="#111"/>
-                    <circle cx="115" cy="241" r="1" fill="#111"/>
-                </g>`
+                name: 'شبشب الأرنب الكيوت',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<ellipse cx="81" cy="232.5" rx="2.6" ry="6" transform="rotate(-12 81 232.5)" fill="${t.base}" ${ln(t, 0.7)}/>
+                        <ellipse cx="81" cy="233" rx="1.1" ry="4" transform="rotate(-12 81 233)" fill="#ffb3c8"/>
+                        <ellipse cx="90" cy="232.5" rx="2.6" ry="6" transform="rotate(10 90 232.5)" fill="${t.base}" ${ln(t, 0.7)}/>
+                        <ellipse cx="90" cy="233" rx="1.1" ry="4" transform="rotate(10 90 233)" fill="#ffb3c8"/>
+                        <path d="M 75.5,243.5 C 74.5,236 79,233.5 86,233.5 C 93,233.5 97.5,236 96.5,243.5 Q 86,248 75.5,243.5 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 91,235 C 95,236.5 97,239 96.5,243.5 Q 93,245.5 89,246 Q 94,240 91,235 Z" fill="${SHADE}" opacity="0.2"/>
+                        <circle cx="83" cy="239.5" r="1.1" fill="#222"/><circle cx="89" cy="239.5" r="1.1" fill="#222"/>
+                        <circle cx="82.7" cy="239.1" r="0.35" fill="#fff"/><circle cx="88.7" cy="239.1" r="0.35" fill="#fff"/>
+                        <ellipse cx="86" cy="241.6" rx="1" ry="0.7" fill="#ff6f9a"/>
+                        <circle cx="80.5" cy="241.5" r="1.3" fill="#ff8fb5" opacity="0.5"/><circle cx="91.5" cy="241.5" r="1.3" fill="#ff8fb5" opacity="0.5"/>`);
+                }
             },
             {
                 id: 'shoe3',
-                name: 'حذاء رياضي أنيق (سنيكرز)',
-                svg: (color) => `<g>
-                    <path d="M 75,236 Q 85,231 95,236 L 95,244 Q 85,246 75,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 75,242 Q 85,244 95,242 L 95,244 Q 85,246 75,244 Z" fill="#ffffff" stroke="#2e1c16" stroke-width="0.5"/>
-                    <line x1="82" y1="237" x2="88" y2="237" stroke="#ffffff" stroke-width="1.2"/>
-                    <line x1="80" y1="240" x2="86" y2="240" stroke="#ffffff" stroke-width="1.2"/>
-                    <path d="M 105,236 Q 115,231 125,236 L 125,244 Q 115,246 105,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 105,242 Q 115,244 125,242 L 125,244 Q 115,246 105,244 Z" fill="#ffffff" stroke="#2e1c16" stroke-width="0.5"/>
-                    <line x1="112" y1="237" x2="118" y2="237" stroke="#ffffff" stroke-width="1.2"/>
-                    <line x1="110" y1="240" x2="116" y2="240" stroke="#ffffff" stroke-width="1.2"/>
-                </g>`
+                name: 'حذاء رياضي (سنيكرز)',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 77,243 L 77.5,237 C 78,232.5 94,232.5 94.5,237 L 95.5,243 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 90,233.8 C 93,234.5 94.3,235.5 94.5,237 L 95.5,243 L 91,243 Z" fill="${SHADE}" opacity="0.2"/>
+                        <path d="M 76,242.5 L 96,242.5 L 96.3,245 Q 86,248 75.7,245 Z" fill="#ffffff" ${ln(WHITE, 0.7)}/>
+                        <path d="M 82,235 L 90,237.5 M 90,235 L 82,237.5 M 82.5,233.8 L 89.5,233.8" fill="none" stroke="#ffffff" stroke-width="1.1" stroke-linecap="round"/>
+                        <path d="M 78.8,236.5 Q 79.5,234.5 82,234" fill="none" stroke="${t.shine}" stroke-width="1.2" stroke-linecap="round"/>`);
+                }
             },
             {
                 id: 'shoe4',
-                name: 'حذاء الكعب العالي الأحمر الفاخر',
-                svg: (color) => `<g>
-                    <path d="M 76,236 L 92,236 L 92,243 L 88,249 L 76,243 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <line x1="77" y1="243" x2="77" y2="249" stroke="${color}" stroke-width="2.5"/>
-                    <path d="M 108,236 L 124,236 L 124,243 L 120,249 L 108,243 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <line x1="109" y1="243" x2="109" y2="249" stroke="${color}" stroke-width="2.5"/>
-                </g>`
+                name: 'حذاء كعب عالي لامع',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 84.6,246 L 87.4,246 L 87,251 L 85,251 Z" fill="${t.deep}" ${ln(t, 0.6)}/>
+                        <path d="M 79,236.5 Q 86,234 93,236.5 L 94,241.5 Q 91,246.5 86,247 Q 81,246.5 78,241.5 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 89,235.3 Q 92,235.6 93,236.5 L 94,241.5 Q 91.5,245.6 87.5,246.8 Q 91.5,241 89,235.3 Z" fill="${SHADE}" opacity="0.22"/>
+                        <path d="M 80.5,239 Q 81.5,243 84,245" fill="none" stroke="${t.shine}" stroke-width="1.2" stroke-linecap="round"/>
+                        <circle cx="86" cy="238.3" r="1.6" fill="#ffffff" ${ln(t, 0.5)}/>`);
+                }
             },
             {
                 id: 'shoe5',
-                name: 'بوت الكاحل الأنيق الموضة',
-                svg: (color) => `<g>
-                    <path d="M 75,224 L 94,224 L 94,244 L 75,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 75,224 L 94,224 L 94,244 L 75,244 Z" fill="url(#shadowOverlay)"/>
-                    <ellipse cx="84.5" cy="244" rx="9.5" ry="1.8" fill="#111"/>
-                    <path d="M 106,224 L 125,224 L 125,244 L 106,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 106,224 L 125,224 L 125,244 L 106,244 Z" fill="url(#shadowOverlay)"/>
-                    <ellipse cx="115.5" cy="244" rx="9.5" ry="1.8" fill="#111"/>
-                </g>`
+                name: 'بوت كاحل بفرو',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 78,226 L 94,226 L 94.5,239 Q 97,241 96.5,243.5 Q 86,247 75.5,243.5 Q 75,241 77.5,239 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 90,229 L 94,229 L 94.5,239 Q 97,241 96.5,243.5 L 92,244.5 Q 92.5,236 90,229 Z" fill="${SHADE}" opacity="0.2"/>
+                        <path d="M 75.4,243 Q 86,247 96.6,243 L 96.6,245.5 Q 86,249.5 75.4,245.5 Z" fill="${t.deep}" ${ln(t, 0.6)}/>
+                        <path d="M 77.5,224 L 94.5,224 L 94.5,229 L 77.5,229 Z" fill="${WHITE.base}" ${ln(WHITE, 0.7)}/>
+                        <path d="M 79,226.5 L 80,227.5 M 83,225.5 L 84,226.8 M 87,226.5 L 88,227.6 M 91,225.6 L 92,226.8" stroke="${WHITE.shadow}" stroke-width="0.8"/>
+                        <path d="M 83,231 L 89,233 M 89,231 L 83,233 M 83,234.5 L 89,236.5 M 89,234.5 L 83,236.5" fill="none" stroke="${t.light}" stroke-width="0.8"/>
+                        <path d="M 79.5,231 L 79.5,240" fill="none" stroke="${t.shine}" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/>`);
+                }
             },
             {
                 id: 'shoe6',
-                name: 'بوت طويل فوق الكاحل دافئ',
-                svg: (color) => `<g>
-                    <path d="M 76,212 L 94,212 L 94,244 L 76,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 76,212 L 94,212 L 94,244 L 76,244 Z" fill="url(#shadowOverlay)"/>
-                    <path d="M 106,212 L 124,212 L 124,244 L 106,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <path d="M 106,212 L 124,212 L 124,244 L 106,244 Z" fill="url(#shadowOverlay)"/>
-                </g>`
+                name: 'بوت طويل بإبزيم',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 78,212 L 94,212 L 94.5,239 Q 97,241 96.5,243.5 Q 86,247 75.5,243.5 Q 75,241 77.5,239 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 90,213 L 94,213 L 94.5,239 Q 97,241 96.5,243.5 L 92,244.5 Q 92.5,228 90,213 Z" fill="${SHADE}" opacity="0.2"/>
+                        <path d="M 75.4,243 Q 86,247 96.6,243 L 96.6,245.5 Q 86,249.5 75.4,245.5 Z" fill="${t.deep}" ${ln(t, 0.6)}/>
+                        <path d="M 77,209 L 95,209 L 94.6,214 L 77.4,214 Z" fill="${t.shadow}" ${ln(t, 0.7)}/>
+                        <path d="M 77.8,224 L 94.2,224 L 94.2,227.5 L 77.8,227.5 Z" fill="${t.deep}" ${ln(t, 0.6)}/>
+                        <rect x="84" y="223.3" width="4.4" height="5" rx="0.8" fill="none" stroke="${GOLD.base}" stroke-width="1.1"/>
+                        <path d="M 80,216 L 80,240" fill="none" stroke="${t.shine}" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>`);
+                }
             },
             {
                 id: 'shoe7',
-                name: 'حذاء ماري جين الكلاسيكي مع جوارب',
-                svg: (color) => `<g>
-                    <rect x="78" y="222" width="14" height="20" fill="#ffffff" stroke="#2e1c16" stroke-width="0.5"/>
-                    <path d="M 76,236 Q 86,232 94,236 L 94,244 Q 86,246 76,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <rect x="108" y="222" width="14" height="20" fill="#ffffff" stroke="#2e1c16" stroke-width="0.5"/>
-                    <path d="M 106,236 Q 116,232 124,236 L 124,244 Q 116,246 106,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                </g>`
+                name: 'حذاء ماري جين مع جوارب كشكش',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 79.5,224 L 92.5,224 L 92.5,241 L 79.5,241 Z" fill="#ffffff" ${ln(WHITE, 0.6)}/>
+                        <path d="M 78.5,224 Q 80,221 81.7,224 Q 83.3,221 85,224 Q 86.7,221 88.3,224 Q 90,221 91.7,224 Q 93,221 93.5,224 L 93.5,226 L 78.5,226 Z" fill="#ffffff" ${ln(WHITE, 0.6)}/>
+                        <path d="M 89,226 L 92.5,226 L 92.5,241 L 89.5,241 Z" fill="${WHITE.shadow}" opacity="0.7"/>
+                        <path d="M 77,243 Q 76.5,237.5 81,237 L 91,237 Q 95.5,237.5 95,243 Q 86,247 77,243 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 79,234.5 L 93,234.5 L 93,236.8 L 79,236.8 Z" fill="${t.base}" ${ln(t, 0.6)}/>
+                        <circle cx="91.3" cy="235.6" r="1" fill="${GOLD.base}"/>
+                        <path d="M 76.9,243 Q 86,247 95.1,243 L 95.1,244.5 Q 86,248.8 76.9,244.5 Z" fill="${t.deep}"/>
+                        <path d="M 79.5,239.5 Q 81,238 84,237.8" fill="none" stroke="${t.shine}" stroke-width="1.2" stroke-linecap="round"/>`);
+                }
             },
             {
                 id: 'shoe8',
-                name: 'حذاء لوفرز مسطح ومريح',
-                svg: (color) => `<g>
-                    <path d="M 76,236 L 94,236 L 94,244 L 76,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <circle cx="85" cy="236" r="1.5" fill="#ffffff"/>
-                    <path d="M 106,236 L 124,236 L 124,244 L 106,244 Z" fill="${color}" stroke="#2e1c16" stroke-width="0.8"/>
-                    <circle cx="115" cy="236" r="1.5" fill="#ffffff"/>
-                </g>`
+                name: 'حذاء لوفر مريح',
+                svg: (c) => {
+                    const t = tone(c);
+                    return mirror(`<path d="M 77,243 Q 76.5,238 80,237.5 Q 86,236.5 92,237.5 Q 95.5,238 95,243 Q 86,247 77,243 Z" fill="${t.base}" ${ln(t, 0.8)}/>
+                        <path d="M 80.5,239.5 L 91.5,239.5 L 91,242 L 81,242 Z" fill="${t.deep}" ${ln(t, 0.6)}/>
+                        <ellipse cx="86" cy="240.7" rx="1.8" ry="0.8" fill="${GOLD.base}"/>
+                        <path d="M 76.8,243 Q 86,247 95.2,243 L 95.2,244.6 Q 86,249 76.8,244.6 Z" fill="#3a2a22"/>
+                        <path d="M 79,240.5 Q 79.5,238.6 82,238.2" fill="none" stroke="${t.shine}" stroke-width="1.2" stroke-linecap="round"/>`);
+                }
             }
         ]
     };

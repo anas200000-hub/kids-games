@@ -201,12 +201,23 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Target colored ball colors (15 balls: solids and stripes styling)
-        // Index 4 is the middle of Row 3, which is the Black 8-ball (#212121)
-        const ballColors = [
-            '#FFEB3B', '#1E88E5', '#E53935', '#8E24AA', '#212121', 
-            '#FB8C00', '#4CAF50', '#8D6E63', '#FFEB3B', '#1E88E5', 
-            '#E53935', '#FB8C00', '#4CAF50', '#8D6E63', '#8E24AA'
+        // Standard 8-Ball setup (1-7 solids, 8 black, 9-15 stripes)
+        const ballDefs = [
+            { num: 1, color: '#FBC02D', stripe: false }, // Yellow solid (Apex)
+            { num: 2, color: '#1976D2', stripe: false }, // Blue solid
+            { num: 3, color: '#D32F2F', stripe: false }, // Red solid
+            { num: 11, color: '#D32F2F', stripe: true },  // Red stripe
+            { num: 8, color: '#212121', stripe: false }, // 8-Ball (Black center of row 3)
+            { num: 4, color: '#7B1FA2', stripe: false }, // Purple solid
+            { num: 14, color: '#388E3C', stripe: true }, // Green stripe
+            { num: 5, color: '#F57C00', stripe: false }, // Orange solid
+            { num: 9, color: '#FBC02D', stripe: true },  // Yellow stripe
+            { num: 10, color: '#1976D2', stripe: true }, // Blue stripe
+            { num: 7, color: '#5D4037', stripe: false }, // Maroon solid
+            { num: 12, color: '#7B1FA2', stripe: true }, // Purple stripe
+            { num: 6, color: '#388E3C', stripe: false }, // Green solid
+            { num: 15, color: '#5D4037', stripe: true }, // Maroon stripe
+            { num: 13, color: '#F57C00', stripe: true }  // Orange stripe
         ];
 
         function resetBallsPosition() {
@@ -220,6 +231,8 @@
                 vy: 0,
                 color: '#FFFFFF',
                 isCue: true,
+                num: 0,
+                stripe: false,
                 targetRadius: BALL_RADIUS,
                 isPocketing: false
             });
@@ -231,39 +244,41 @@
             const hSpacing = BALL_RADIUS * 2 + 0.5;
             const vSpacing = BALL_RADIUS * 1.732;
 
-            // Row 1 (1 ball at bottom)
-            balls.push(createTargetBall(triangleCenterX, triangleCenterY, ballColors[0]));
+            // Row 1 (1 ball at apex)
+            balls.push(createTargetBall(triangleCenterX, triangleCenterY, ballDefs[0]));
             
-            // Row 2 (2 balls above)
-            balls.push(createTargetBall(triangleCenterX - hSpacing/2, triangleCenterY - vSpacing, ballColors[1]));
-            balls.push(createTargetBall(triangleCenterX + hSpacing/2, triangleCenterY - vSpacing, ballColors[2]));
+            // Row 2 (2 balls)
+            balls.push(createTargetBall(triangleCenterX - hSpacing/2, triangleCenterY - vSpacing, ballDefs[1]));
+            balls.push(createTargetBall(triangleCenterX + hSpacing/2, triangleCenterY - vSpacing, ballDefs[2]));
             
-            // Row 3 (3 balls above - middle ball index 4 is Black 8-ball)
-            balls.push(createTargetBall(triangleCenterX - hSpacing, triangleCenterY - vSpacing * 2, ballColors[3]));
-            balls.push(createTargetBall(triangleCenterX, triangleCenterY - vSpacing * 2, ballColors[4]));
-            balls.push(createTargetBall(triangleCenterX + hSpacing, triangleCenterY - vSpacing * 2, ballColors[5]));
+            // Row 3 (3 balls - center is 8-ball)
+            balls.push(createTargetBall(triangleCenterX - hSpacing, triangleCenterY - vSpacing * 2, ballDefs[3]));
+            balls.push(createTargetBall(triangleCenterX, triangleCenterY - vSpacing * 2, ballDefs[4]));
+            balls.push(createTargetBall(triangleCenterX + hSpacing, triangleCenterY - vSpacing * 2, ballDefs[5]));
 
-            // Row 4 (4 balls above)
-            balls.push(createTargetBall(triangleCenterX - hSpacing * 1.5, triangleCenterY - vSpacing * 3, ballColors[6]));
-            balls.push(createTargetBall(triangleCenterX - hSpacing * 0.5, triangleCenterY - vSpacing * 3, ballColors[7]));
-            balls.push(createTargetBall(triangleCenterX + hSpacing * 0.5, triangleCenterY - vSpacing * 3, ballColors[8]));
-            balls.push(createTargetBall(triangleCenterX + hSpacing * 1.5, triangleCenterY - vSpacing * 3, ballColors[9]));
+            // Row 4 (4 balls)
+            balls.push(createTargetBall(triangleCenterX - hSpacing * 1.5, triangleCenterY - vSpacing * 3, ballDefs[6]));
+            balls.push(createTargetBall(triangleCenterX - hSpacing * 0.5, triangleCenterY - vSpacing * 3, ballDefs[7]));
+            balls.push(createTargetBall(triangleCenterX + hSpacing * 0.5, triangleCenterY - vSpacing * 3, ballDefs[8]));
+            balls.push(createTargetBall(triangleCenterX + hSpacing * 1.5, triangleCenterY - vSpacing * 3, ballDefs[9]));
 
-            // Row 5 (5 balls above)
-            balls.push(createTargetBall(triangleCenterX - hSpacing * 2, triangleCenterY - vSpacing * 4, ballColors[10]));
-            balls.push(createTargetBall(triangleCenterX - hSpacing, triangleCenterY - vSpacing * 4, ballColors[11]));
-            balls.push(createTargetBall(triangleCenterX, triangleCenterY - vSpacing * 4, ballColors[12]));
-            balls.push(createTargetBall(triangleCenterX + hSpacing, triangleCenterY - vSpacing * 4, ballColors[13]));
-            balls.push(createTargetBall(triangleCenterX + hSpacing * 2, triangleCenterY - vSpacing * 4, ballColors[14]));
+            // Row 5 (5 balls at top)
+            balls.push(createTargetBall(triangleCenterX - hSpacing * 2, triangleCenterY - vSpacing * 4, ballDefs[10]));
+            balls.push(createTargetBall(triangleCenterX - hSpacing, triangleCenterY - vSpacing * 4, ballDefs[11]));
+            balls.push(createTargetBall(triangleCenterX, triangleCenterY - vSpacing * 4, ballDefs[12]));
+            balls.push(createTargetBall(triangleCenterX + hSpacing, triangleCenterY - vSpacing * 4, ballDefs[13]));
+            balls.push(createTargetBall(triangleCenterX + hSpacing * 2, triangleCenterY - vSpacing * 4, ballDefs[14]));
         }
 
-        function createTargetBall(x, y, color) {
+        function createTargetBall(x, y, def) {
             return {
                 x: x,
                 y: y,
                 vx: 0,
                 vy: 0,
-                color: color,
+                color: def.color,
+                num: def.num,
+                stripe: def.stripe,
                 isCue: false,
                 targetRadius: BALL_RADIUS,
                 isPocketing: false
@@ -476,37 +491,114 @@
         function drawGame() {
             ctx.clearRect(0, 0, width, height);
 
-            // 1. DRAW WOODEN BORDER (Table)
-            ctx.fillStyle = '#5D4037'; // brown wood
+            // 1. DRAW REALISTIC WOODEN BORDER & RAIL
+            // Mahogany outer wood rail
+            const woodGrad = ctx.createLinearGradient(0, 0, width, height);
+            woodGrad.addColorStop(0, '#3E2723');
+            woodGrad.addColorStop(0.5, '#4E342E');
+            woodGrad.addColorStop(1, '#2D1D19');
+            ctx.fillStyle = woodGrad;
             ctx.fillRect(0, 0, width, height);
 
-            // felt area
-            ctx.fillStyle = '#2E7D32'; // felt green
+            // Wood inner bevel / trim
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(2, 2, width - 4, height - 4);
+            ctx.fillStyle = woodGrad;
+            ctx.fillRect(4, 4, width - 8, height - 8);
+
+            // Inlaid Mother-of-Pearl Diamond Sights on the rails
+            ctx.fillStyle = '#E0E0E0';
+            const drawDiamond = (dx, dy) => {
+                ctx.beginPath();
+                ctx.moveTo(dx, dy - 2.5);
+                ctx.lineTo(dx + 2.5, dy);
+                ctx.lineTo(dx, dy + 2.5);
+                ctx.lineTo(dx - 2.5, dy);
+                ctx.closePath();
+                ctx.fill();
+            };
+            // Horizontal rails diamonds
+            [0.25, 0.5, 0.75].forEach(ratio => {
+                drawDiamond(width * ratio, TABLE_MARGIN * 0.45);
+                drawDiamond(width * ratio, height - TABLE_MARGIN * 0.45);
+            });
+            // Vertical rails diamonds
+            [0.25, 0.75].forEach(ratio => {
+                drawDiamond(TABLE_MARGIN * 0.45, height * ratio);
+                drawDiamond(width - TABLE_MARGIN * 0.45, height * ratio);
+            });
+
+            // 2. REALISTIC CLOTH / FELT
+            // Main baize green with realistic center illumination
+            const feltGrad = ctx.createRadialGradient(width * 0.5, height * 0.5, width * 0.1, width * 0.5, height * 0.5, height * 0.65);
+            feltGrad.addColorStop(0, '#2E7D32'); // lively tournament green
+            feltGrad.addColorStop(0.7, '#1B5E20'); // deep forest green
+            feltGrad.addColorStop(1, '#0E3B13'); // shadowed edge felt
+            ctx.fillStyle = feltGrad;
             ctx.fillRect(TABLE_MARGIN, TABLE_MARGIN, width - TABLE_MARGIN * 2, height - TABLE_MARGIN * 2);
 
-            // cushion borders
-            ctx.fillStyle = '#1B5E20';
-            ctx.fillRect(TABLE_MARGIN, TABLE_MARGIN, width - TABLE_MARGIN * 2, 4); // top
-            ctx.fillRect(TABLE_MARGIN, height - TABLE_MARGIN - 4, width - TABLE_MARGIN * 2, 4); // bottom
-            ctx.fillRect(TABLE_MARGIN, TABLE_MARGIN, 4, height - TABLE_MARGIN * 2); // left
-            ctx.fillRect(width - TABLE_MARGIN - 4, TABLE_MARGIN, 4, height - TABLE_MARGIN * 2); // right
+            // Table Head String Line (Dotted subtle white line)
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([3, 4]);
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 1;
+            ctx.moveTo(TABLE_MARGIN + 6, height * 0.75);
+            ctx.lineTo(width - TABLE_MARGIN - 6, height * 0.75);
+            ctx.stroke();
+            ctx.restore();
 
-            // 2. DRAW POCKETS (black circles with gold rims)
+            // Head spot
+            ctx.beginPath();
+            ctx.arc(width * 0.5, height * 0.75, 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fill();
+
+            // Cushions (Rubber bumper shadow & highlight)
+            // Inner rubber cushion bevel
+            ctx.fillStyle = '#0D4114';
+            ctx.fillRect(TABLE_MARGIN, TABLE_MARGIN, width - TABLE_MARGIN * 2, 6); // Top cushion
+            ctx.fillRect(TABLE_MARGIN, height - TABLE_MARGIN - 6, width - TABLE_MARGIN * 2, 6); // Bottom
+            ctx.fillRect(TABLE_MARGIN, TABLE_MARGIN, 6, height - TABLE_MARGIN * 2); // Left
+            ctx.fillRect(width - TABLE_MARGIN - 6, TABLE_MARGIN, 6, height - TABLE_MARGIN * 2); // Right
+
+            // Cushion highlight lip
+            ctx.fillStyle = '#388E3C';
+            ctx.fillRect(TABLE_MARGIN + 6, TABLE_MARGIN + 5, width - (TABLE_MARGIN + 6) * 2, 1.5);
+            ctx.fillRect(TABLE_MARGIN + 6, height - TABLE_MARGIN - 6.5, width - (TABLE_MARGIN + 6) * 2, 1.5);
+            ctx.fillRect(TABLE_MARGIN + 5, TABLE_MARGIN + 6, 1.5, height - (TABLE_MARGIN + 6) * 2);
+            ctx.fillRect(width - TABLE_MARGIN - 6.5, TABLE_MARGIN + 6, 1.5, height - (TABLE_MARGIN + 6) * 2);
+
+            // 3. DRAW REALISTIC RECESSED POCKETS
             pockets.forEach(p => {
-                // Gold Rim
+                // Brass / Golden Pocket Bracket
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS + 2, 0, Math.PI * 2);
-                ctx.fillStyle = '#D4AF37'; // gold
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 3.5, 0, Math.PI * 2);
+                const brassGrad = ctx.createRadialGradient(p.x - 2, p.y - 2, 2, p.x, p.y, POCKET_RADIUS + 3.5);
+                brassGrad.addColorStop(0, '#FFF59D');
+                brassGrad.addColorStop(0.5, '#FBC02D');
+                brassGrad.addColorStop(1, '#825A00');
+                ctx.fillStyle = brassGrad;
                 ctx.fill();
 
-                // Pocket hole
+                // Leather pocket rim
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 1, 0, Math.PI * 2);
+                ctx.fillStyle = '#3E2723';
+                ctx.fill();
+
+                // Deep Dark Hole with soft falloff shadow
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
-                ctx.fillStyle = '#111111'; // hole black
+                const holeGrad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, POCKET_RADIUS);
+                holeGrad.addColorStop(0, '#000000');
+                holeGrad.addColorStop(0.85, '#050505');
+                holeGrad.addColorStop(1, '#1a1a1a');
+                ctx.fillStyle = holeGrad;
                 ctx.fill();
             });
 
-            // 3. DRAW SLINGSHOT CUE GUIDELINE
+            // 3. DRAW SLINGSHOT CUE GUIDELINE & REALISTIC TAPERED CUE STICK
             if (isAiming) {
                 const cueBall = balls.find(b => b.isCue);
                 if (cueBall) {
@@ -516,105 +608,297 @@
 
                     if (dist > 8) {
                         const angle = Math.atan2(dy, dx);
-                        
-                        // Draw Aiming Guide Line (dotted)
+                        const aimDist = Math.min(dist * 3.0, 220);
+                        const targetX = cueBall.x + Math.cos(angle) * aimDist;
+                        const targetY = cueBall.y + Math.sin(angle) * aimDist;
+
+                        // Draw Aiming Guide Line (crisp laser path with soft glow)
                         ctx.save();
                         ctx.beginPath();
-                        ctx.setLineDash([5, 5]);
+                        ctx.setLineDash([6, 5]);
                         ctx.moveTo(cueBall.x, cueBall.y);
-                        // Extend guide line forward
-                        ctx.lineTo(cueBall.x + Math.cos(angle) * Math.min(dist * 2.5, 140), cueBall.y + Math.sin(angle) * Math.min(dist * 2.5, 140));
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                        ctx.lineWidth = 2.5;
+                        ctx.lineTo(targetX, targetY);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.lineWidth = 1.8;
+                        ctx.stroke();
+
+                        // Target ghost circle at the end of line
+                        ctx.beginPath();
+                        ctx.arc(targetX, targetY, BALL_RADIUS * 0.8, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                        ctx.lineWidth = 1.2;
+                        ctx.setLineDash([3, 3]);
                         ctx.stroke();
                         ctx.restore();
 
-                        // Draw Wooden Cue Stick behind cue ball
+                        // Draw Realistic Tapered Wood Cue Stick behind cue ball
                         ctx.save();
                         ctx.translate(cueBall.x, cueBall.y);
                         ctx.rotate(angle);
                         
-                        // The pull-back retraction amount
-                        const pullBackAmount = Math.min(dist * 0.7, 50);
+                        const pullBack = Math.min(dist * 0.7, 55);
+                        const tipX = -BALL_RADIUS - 6 - pullBack;
+                        const stickLen = Math.max(160, width * 0.48);
+                        const buttX = tipX - stickLen;
 
-                        // Draw Cue Stick
+                        // Cue shadow on felt
+                        ctx.save();
+                        ctx.translate(3, 4);
                         ctx.beginPath();
-                        // Cue tip starts behind cue ball, offset by pullback amount
-                        const stickStart = -BALL_RADIUS - 6 - pullBackAmount;
-                        ctx.moveTo(stickStart, 0);
-                        ctx.lineTo(stickStart - width * 0.45, 0);
+                        ctx.moveTo(tipX, -1.5);
+                        ctx.lineTo(buttX, -4.5);
+                        ctx.lineTo(buttX, 4.5);
+                        ctx.lineTo(tipX, 1.5);
+                        ctx.closePath();
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                        ctx.fill();
+                        ctx.restore();
+
+                        // Cue Maple Shaft (tapered)
+                        ctx.beginPath();
+                        ctx.moveTo(tipX, -1.8);
+                        ctx.lineTo(buttX, -4.5);
+                        ctx.lineTo(buttX, 4.5);
+                        ctx.lineTo(tipX, 1.8);
+                        ctx.closePath();
                         
-                        // Wooden gradient for cue stick
-                        const cueGrad = ctx.createLinearGradient(stickStart, 0, stickStart - width * 0.45, 0);
-                        cueGrad.addColorStop(0, '#FFE0B2'); // white cue tip
-                        cueGrad.addColorStop(0.04, '#FFE0B2');
-                        cueGrad.addColorStop(0.05, '#8D6E63'); // brown stick
-                        cueGrad.addColorStop(1, '#5D4037'); // dark wood handle
-                        
-                        ctx.strokeStyle = cueGrad;
-                        ctx.lineWidth = 4.5;
-                        ctx.lineCap = 'round';
+                        const cueWoodGrad = ctx.createLinearGradient(buttX, 0, tipX, 0);
+                        cueWoodGrad.addColorStop(0, '#2D1B10'); // Dark mahogany butt
+                        cueWoodGrad.addColorStop(0.35, '#4E342E'); // Grip section
+                        cueWoodGrad.addColorStop(0.4, '#D7CCC8'); // Inlaid decorative ring
+                        cueWoodGrad.addColorStop(0.42, '#5D4037');
+                        cueWoodGrad.addColorStop(0.55, '#D7A768'); // Hard rock maple shaft
+                        cueWoodGrad.addColorStop(0.96, '#ECD0A8');
+                        cueWoodGrad.addColorStop(1, '#FFF9C4'); // White ferrule
+                        ctx.fillStyle = cueWoodGrad;
+                        ctx.fill();
+
+                        // Blue chalk tip
+                        ctx.fillStyle = '#1976D2';
+                        ctx.fillRect(tipX - 1.5, -1.6, 2.5, 3.2);
+
+                        // Highlight sheen along cue spine
+                        ctx.beginPath();
+                        ctx.moveTo(tipX - 2, -0.6);
+                        ctx.lineTo(buttX, -1.5);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                        ctx.lineWidth = 1;
                         ctx.stroke();
+
                         ctx.restore();
                     }
                 }
             }
 
-            // 4. DRAW BALLS (Glossy 3D)
+            // 4. DRAW BALLS (Glossy 3D Spheres)
             balls.forEach(b => {
                 if (b.targetRadius <= 0) return;
-                drawGlossyBall(b.x, b.y, b.targetRadius, b.color, b.isCue);
+                drawGlossyBall(b);
             });
         }
 
-        // Draw glossy 3D spheres
-        function drawGlossyBall(cx, cy, r, color, isCue) {
+        // Draw hyper-realistic 3D billiard spheres
+        function drawGlossyBall(b) {
+            const cx = b.x;
+            const cy = b.y;
+            const r = b.targetRadius;
+            const color = b.color;
+            const isCue = b.isCue;
+            const num = b.num;
+            const stripe = b.stripe;
+
+            if (r <= 0) return;
+
+            // 1. SOFT CONTACT DROP SHADOW UNDER BALL
+            if (!b.isPocketing) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.ellipse(cx + r * 0.12, cy + r * 0.78, r * 0.88, r * 0.35, 0, 0, Math.PI * 2);
+                const shadowGrad = ctx.createRadialGradient(cx + r * 0.12, cy + r * 0.78, 0, cx + r * 0.12, cy + r * 0.78, r * 0.88);
+                shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+                shadowGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.22)');
+                shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = shadowGrad;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 2. BALL SPHERE BASE
             ctx.save();
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.clip(); // Clip everything to the spherical circumference
 
-            const grad = ctx.createRadialGradient(cx - r/3, cy - r/3, r * 0.1, cx, cy, r);
-            grad.addColorStop(0, '#FFFFFF'); // Specular light highlight
-            grad.addColorStop(0.3, color);
-            grad.addColorStop(1, adjustColorBrightness(color, -40)); // shadow core
-            
-            ctx.fillStyle = grad;
-            ctx.fill();
+            if (isCue) {
+                // Realistic Cue Ball (Pristine resin ivory with spherical lighting)
+                const cueGrad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.38, r * 0.05, cx, cy, r * 1.05);
+                cueGrad.addColorStop(0, '#FFFFFF');
+                cueGrad.addColorStop(0.45, '#F9FAFB');
+                cueGrad.addColorStop(0.8, '#D1D5DB');
+                cueGrad.addColorStop(1, '#6B7280');
+                ctx.fillStyle = cueGrad;
+                ctx.fill();
 
-            // Draw cue ball core circle or standard target ball numbers for 8 Ball feel!
-            if (!isCue && r > BALL_RADIUS * 0.8) {
-                // small white circle inside colored ball
+                // Authentic Aramith red dot on cue ball
                 ctx.beginPath();
-                ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = '#FFFFFF';
+                ctx.arc(cx, cy, Math.max(1.8, r * 0.12), 0, Math.PI * 2);
+                ctx.fillStyle = '#D32F2F';
+                ctx.fill();
+            } else if (stripe) {
+                // Striped Ball (Ivory base + colored middle band)
+                // First: Ivory base sphere
+                const ivoryGrad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.38, r * 0.05, cx, cy, r * 1.05);
+                ivoryGrad.addColorStop(0, '#FFFFFF');
+                ivoryGrad.addColorStop(0.45, '#F3F4F6');
+                ivoryGrad.addColorStop(0.8, '#D1D5DB');
+                ivoryGrad.addColorStop(1, '#6B7280');
+                ctx.fillStyle = ivoryGrad;
+                ctx.fill();
+
+                // Second: Colored middle band / stripe
+                const stripeThickness = r * 0.95;
+                ctx.beginPath();
+                ctx.rect(cx - r * 1.1, cy - stripeThickness / 2, r * 2.2, stripeThickness);
+                
+                // Realistic gradient for stripe matching the sphere curvature
+                const stripeGrad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.38, r * 0.05, cx, cy, r * 1.05);
+                stripeGrad.addColorStop(0, adjustColorBrightness(color, 25));
+                stripeGrad.addColorStop(0.4, color);
+                stripeGrad.addColorStop(0.82, adjustColorBrightness(color, -40));
+                stripeGrad.addColorStop(1, adjustColorBrightness(color, -65));
+                ctx.fillStyle = stripeGrad;
+                ctx.fill();
+
+                // Stripe border lines
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+                ctx.lineWidth = 0.6;
+                ctx.beginPath();
+                ctx.moveTo(cx - r, cy - stripeThickness / 2);
+                ctx.lineTo(cx + r, cy - stripeThickness / 2);
+                ctx.moveTo(cx - r, cy + stripeThickness / 2);
+                ctx.lineTo(cx + r, cy + stripeThickness / 2);
+                ctx.stroke();
+            } else {
+                // Solid Ball (Full color with deep 3D volume shading)
+                const solidGrad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.38, r * 0.05, cx, cy, r * 1.05);
+                solidGrad.addColorStop(0, adjustColorBrightness(color, 35));
+                solidGrad.addColorStop(0.35, color);
+                solidGrad.addColorStop(0.8, adjustColorBrightness(color, -40));
+                solidGrad.addColorStop(1, adjustColorBrightness(color, -65));
+                ctx.fillStyle = solidGrad;
                 ctx.fill();
             }
 
-            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-            ctx.lineWidth = 0.8;
+            // 3. NUMBER BADGE (White circle with clear ball number for 1-15)
+            if (!isCue && r > 7) {
+                const badgeR = r * 0.42;
+                
+                // White badge disc with subtle 3D depth
+                ctx.beginPath();
+                ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+                const badgeGrad = ctx.createRadialGradient(cx - badgeR * 0.3, cy - badgeR * 0.3, 0, cx, cy, badgeR);
+                badgeGrad.addColorStop(0, '#FFFFFF');
+                badgeGrad.addColorStop(0.8, '#F0F0F0');
+                badgeGrad.addColorStop(1, '#D6D6D6');
+                ctx.fillStyle = badgeGrad;
+                ctx.fill();
+
+                // Subtle badge rim
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+
+                // Number text
+                ctx.fillStyle = '#1A1A1A';
+                const fontSize = Math.max(7, Math.round(r * 0.46));
+                ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(num, cx, cy + 0.5);
+
+                // Underline standard for numbers 6 and 9
+                if (num === 6 || num === 9) {
+                    ctx.beginPath();
+                    const lineW = fontSize * 0.45;
+                    ctx.moveTo(cx - lineW / 2, cy + fontSize * 0.42);
+                    ctx.lineTo(cx + lineW / 2, cy + fontSize * 0.42);
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = '#1A1A1A';
+                    ctx.stroke();
+                }
+            }
+
+            // 4. REFLECTION & GLOSS (Billiard ball specular highlights & bounce light)
+            // A. Primary crisp bright hot-spot specular highlight
+            ctx.beginPath();
+            ctx.ellipse(cx - r * 0.32, cy - r * 0.34, r * 0.28, r * 0.18, -Math.PI / 6, 0, Math.PI * 2);
+            const specGrad = ctx.createRadialGradient(cx - r * 0.32, cy - r * 0.34, 0, cx - r * 0.32, cy - r * 0.34, r * 0.28);
+            specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            specGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.55)');
+            specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = specGrad;
+            ctx.fill();
+
+            // B. Secondary soft ambient reflection highlight
+            ctx.beginPath();
+            ctx.arc(cx - r * 0.25, cy - r * 0.25, r * 0.45, 0, Math.PI * 2);
+            const softGlow = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.25, 0, cx - r * 0.25, cy - r * 0.25, r * 0.45);
+            softGlow.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+            softGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = softGlow;
+            ctx.fill();
+
+            // C. Bottom rim felt bounce light (Fresnel-like green reflection from the baize cloth)
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 0.95, 0, Math.PI * 2);
+            const rimBounceGrad = ctx.createRadialGradient(cx + r * 0.3, cy + r * 0.45, r * 0.4, cx, cy, r);
+            rimBounceGrad.addColorStop(0, 'rgba(46, 125, 50, 0)');
+            rimBounceGrad.addColorStop(0.85, 'rgba(76, 175, 80, 0.18)');
+            rimBounceGrad.addColorStop(1, 'rgba(129, 199, 132, 0.35)');
+            ctx.fillStyle = rimBounceGrad;
+            ctx.fill();
+
+            ctx.restore(); // restores clip
+
+            // 5. CRISP OUTER SPHERE RIM (Dark ambient occlusion outline)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.lineWidth = 0.75;
             ctx.stroke();
             ctx.restore();
         }
 
-        // Helper to adjust color shade for radial gradient shadow
+        // Helper to adjust color shade for radial gradient shadow and highlight
         function adjustColorBrightness(hex, percent) {
             let R = parseInt(hex.substring(1, 3), 16);
             let G = parseInt(hex.substring(3, 5), 16);
             let B = parseInt(hex.substring(5, 7), 16);
 
-            R = parseInt(R * (100 + percent) / 100);
-            G = parseInt(G * (100 + percent) / 100);
-            B = parseInt(B * (100 + percent) / 100);
+            if (percent > 0) {
+                // Blend towards white for realistic highlights
+                const factor = percent / 100;
+                R = Math.round(R + (255 - R) * factor);
+                G = Math.round(G + (255 - G) * factor);
+                B = Math.round(B + (255 - B) * factor);
+            } else {
+                // Blend towards black for realistic shadows
+                const factor = (100 + percent) / 100;
+                R = Math.round(R * factor);
+                G = Math.round(G * factor);
+                B = Math.round(B * factor);
+            }
 
-            R = (R < 255) ? R : 255;
-            G = (G < 255) ? G : 255;
-            B = (B < 255) ? B : 255;
+            R = Math.min(255, Math.max(0, R));
+            G = Math.min(255, Math.max(0, G));
+            B = Math.min(255, Math.max(0, B));
 
-            const rHex = (R.toString(16).length === 1) ? "0" + R.toString(16) : R.toString(16);
-            const gHex = (G.toString(16).length === 1) ? "0" + G.toString(16) : G.toString(16);
-            const bHex = (B.toString(16).length === 1) ? "0" + B.toString(16) : B.toString(16);
+            const rHex = R.toString(16).padStart(2, '0');
+            const gHex = G.toString(16).padStart(2, '0');
+            const bHex = B.toString(16).padStart(2, '0');
 
-            return "#" + rHex + gHex + bHex;
+            return '#' + rHex + gHex + bHex;
         }
 
         function levelWin() {

@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'loopDrive', emoji: '🚗', image: 'assets/images/loop_drive_card.png', title: 'تحدي الدوران', color: 'linear-gradient(135deg, #FFD54F, #FF8F00)' },
         { id: 'hammerNails', emoji: '🔨', image: 'assets/images/hammer_nails_card.png', title: 'مطرقة المسامير', color: 'linear-gradient(135deg, #A1887F, #6D4C41)' },
         { id: 'arrowTarget', emoji: '🏹', image: 'assets/images/arrow_target_card.png', title: 'قناص السهام', color: 'linear-gradient(135deg, #FFF59D, #D84315)' },
-        { id: 'spaceShooter', emoji: '🚀', image: 'assets/images/space_shooter_card.png', title: 'حارس المجرة', color: 'linear-gradient(135deg, #1A237E, #4A148C)' }
+        { id: 'spaceShooter', emoji: '🚀', image: 'assets/images/space_shooter_card.png', title: 'حارس المجرة', color: 'linear-gradient(135deg, #1A237E, #4A148C)' },
+        { id: 'game2048', emoji: '🔢', title: 'لعبة 2048 للأبطال', color: 'linear-gradient(135deg, #FF9800, #F44336)' }
     ];
 
     // Render the Game Hub
@@ -301,6 +302,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'spaceShooter':
                 if (window.initSpaceShooterGame) window.initSpaceShooterGame(gameArea);
+                break;
+            case 'game2048':
+                if (window.initGame2048) window.initGame2048(gameArea);
                 break;
         }
 
