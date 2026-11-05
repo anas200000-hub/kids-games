@@ -23,13 +23,32 @@
             (r, c, N) => [N - 1 - c, N - 1 - r]           // 7: anti-transpose
         ];
 
+        // Random stage order generated anew every time the game is opened
+        const SESSION_SHUFFLES = {};
+        function shuffleStages() {
+            ['easy', 'medium', 'hard'].forEach(diff => {
+                const arr = Array.from({length: 1000}, (_, i) => i + 1);
+                // Fisher-Yates shuffle
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                SESSION_SHUFFLES[diff] = arr;
+            });
+        }
+        // Initialize random stage ordering on game start
+        shuffleStages();
+
         function getLevel(difficulty, stageNum) {
             if (!MEOWDOKU_TEMPLATES[difficulty]) difficulty = 'easy';
             const list = MEOWDOKU_TEMPLATES[difficulty];
             stageNum = Math.max(1, Math.min(1000, stageNum));
 
-            const baseIdx = Math.floor((stageNum - 1) / 8);
-            const symIdx = (stageNum - 1) % 8;
+            // Map stageNum to the session's random puzzle ID
+            const puzzleId = (SESSION_SHUFFLES[difficulty] && SESSION_SHUFFLES[difficulty][stageNum - 1]) || stageNum;
+
+            const baseIdx = Math.floor((puzzleId - 1) / 8);
+            const symIdx = (puzzleId - 1) % 8;
             const [N, solStr, gridStr] = list[baseIdx];
 
             const baseSol = solStr.split('').map(Number);
@@ -54,9 +73,9 @@
                 solution[nr] = nc;
             }
 
-            // Permute colors based on stageNum so every level has fresh pastel distribution
+            // Permute colors based on puzzleId so every level has fresh pastel distribution
             const perm = Array.from({length: N}, (_, i) => i);
-            let pSeed = stageNum * 7919 + 17;
+            let pSeed = puzzleId * 7919 + 17;
             for (let i = N - 1; i > 0; i--) {
                 pSeed = (pSeed * 1664525 + 1013904223) >>> 0;
                 const j = Math.floor(((pSeed >>> 0) / 4294967296) * (i + 1));
@@ -71,6 +90,7 @@
 
             return {
                 id: stageNum,
+                puzzleId: puzzleId,
                 difficulty: difficulty,
                 size: N,
                 title: 'المرحلة ' + stageNum,
@@ -359,6 +379,7 @@
                                 <input id="mdStageJumpInput" type="number" min="1" max="1000" placeholder="1-1000" style="width: 58px; padding: 4px; border: 1.5px solid #D7CCC8; border-radius: 8px; font-size: 11px; text-align: center; font-weight: bold; outline: none;">
                                 <button id="mdStageJumpBtn" style="background: #F7A361; color: white; border: none; border-radius: 8px; padding: 4px 7px; font-size: 11px; font-weight: 900; cursor: pointer;">انتقال</button>
                                 <button id="mdJumpCurrentBtn" title="الانتقال لمرحلتي الحالية" style="background: #FFF3E0; border: 1px solid #FFE082; border-radius: 8px; padding: 4px 6px; font-size: 10.5px; font-weight: bold; color: #E65100; cursor: pointer;">📍 الحالية</button>
+                                <button id="mdReshuffleBtn" title="إعادة خلط وترتيب المراحل عشوائياً" style="background: #E8F5E9; border: 1.5px solid #81C784; border-radius: 8px; padding: 4px 6px; font-size: 10.5px; font-weight: 900; color: #2E7D32; cursor: pointer;">🔀 خلط</button>
                             </div>
                         </div>
 
@@ -491,6 +512,7 @@
         const stageJumpInput = document.getElementById('mdStageJumpInput');
         const stageJumpBtn = document.getElementById('mdStageJumpBtn');
         const jumpCurrentBtn = document.getElementById('mdJumpCurrentBtn');
+        const reshuffleBtn = document.getElementById('mdReshuffleBtn');
         const stagesGrid = document.getElementById('mdStagesGrid');
         const winModal = document.getElementById('mdWinModal');
         const failModal = document.getElementById('mdFailModal');
@@ -1171,40 +1193,38 @@
                 const lvl = getLevel(stagesModalTab, s);
                 const lvlProg = progress[s] || {};
                 const isCurrent = (stagesModalTab === currentDifficulty && s === currentStage);
-                const isUnlocked = s === 1 || lvlProg.stars > 0 || lvlProg.unlocked;
 
                 const lvlCard = document.createElement('div');
                 lvlCard.style.cssText = `
-                    background: ${isCurrent ? '#FFF3E0' : (isUnlocked ? '#FFFFFF' : '#EFEBE4')};
-                    border: 2px solid ${isCurrent ? '#F7A361' : (isUnlocked ? '#E0D8CC' : '#D7CCC8')};
+                    background: ${isCurrent ? '#FFF3E0' : '#FFFFFF'};
+                    border: 2px solid ${isCurrent ? '#F7A361' : '#E0D8CC'};
                     border-radius: 12px;
                     padding: 6px 2px;
                     text-align: center;
-                    cursor: ${isUnlocked ? 'pointer' : 'not-allowed'};
+                    cursor: pointer;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     gap: 2px;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+                    transition: transform 0.1s;
                 `;
 
-                let starsText = isUnlocked ? '☆☆☆' : '🔒';
+                let starsText = '☆☆☆';
                 if (lvlProg.stars === 3) starsText = '⭐⭐⭐';
                 else if (lvlProg.stars === 2) starsText = '⭐⭐☆';
                 else if (lvlProg.stars === 1) starsText = '⭐☆☆';
 
                 lvlCard.innerHTML = `
-                    <span style="font-size: 13px; font-weight: 900; color: ${isUnlocked ? '#5D4037' : '#BCAAA4'};">${s}</span>
+                    <span style="font-size: 13px; font-weight: 900; color: #5D4037;">${s}</span>
                     <span style="font-size: 8.5px; color: #8D6E63; font-weight: bold;">${lvl.size}x${lvl.size}</span>
                     <span style="font-size: 8px;">${starsText}</span>
                 `;
 
-                if (isUnlocked) {
-                    lvlCard.addEventListener('click', () => {
-                        playMeow();
-                        loadLevel(s, stagesModalTab);
-                    });
-                }
+                lvlCard.addEventListener('click', () => {
+                    playMeow();
+                    loadLevel(s, stagesModalTab);
+                });
 
                 stagesGrid.appendChild(lvlCard);
             }
@@ -1257,6 +1277,15 @@
                 stagesModalTab = currentDifficulty;
                 stagesModalPage = Math.floor((currentStage - 1) / 50) + 1;
                 renderStagesGrid(stagesModalTab, stagesModalPage);
+            });
+        }
+
+        if (reshuffleBtn) {
+            reshuffleBtn.addEventListener('click', () => {
+                playMeow();
+                shuffleStages();
+                renderStagesGrid(stagesModalTab, stagesModalPage);
+                loadLevel(currentStage);
             });
         }
 
