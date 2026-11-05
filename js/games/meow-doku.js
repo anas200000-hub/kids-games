@@ -2247,7 +2247,14 @@
         let board = []; // 2D array: 0: empty, 1: white cross, 2: cat 🐱, 3: red cross (mistake)
         let boardHistory = [];
         let isDragging = false;
-        let dragCellTarget = null;
+        let dragMoved = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragStartCell = null;
+        let lastProcessedCell = null;
+        let dragAction = 'cross'; // 'cross', 'erase', or 'none'
+        let lastSoundTime = 0;
+
         let timerSeconds = 0;
         let timerInterval = null;
         let mistakes = 0;
@@ -2302,6 +2309,14 @@
                 osc.start(now);
                 osc.stop(now + 0.21);
             } catch(e) {}
+        }
+
+        function playPurrThrottled() {
+            const now = Date.now();
+            if (now - lastSoundTime > 65) {
+                lastSoundTime = now;
+                playPurr();
+            }
         }
 
         function playErrorSound() {
@@ -2615,11 +2630,76 @@
             updateFishTreatsUI();
             updateCatTrackUI();
             startTimer();
-            renderBoard();
+            renderBoard(true);
+        }
+
+        // Update DOM for a single cell without rebuilding the grid (instant, zero-lag)
+        function updateCellDOM(r, c) {
+            const cell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
+            if (!cell) return;
+            const val = board[r][c];
+            if (val === 2) {
+                const cellSize = cell.offsetWidth || 50;
+                const emojiSize = Math.floor(cellSize * 0.72);
+                cell.innerHTML = `<div style="font-size: ${emojiSize}px; line-height: 1; user-select: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18)); pointer-events: none;">🐱</div>`;
+            } else if (val === 1) {
+                cell.innerHTML = getCrossSVG('#FFFFFF');
+            } else if (val === 3) {
+                cell.innerHTML = getCrossSVG('#EF4444');
+            } else {
+                cell.innerHTML = '';
+            }
+        }
+
+        // Apply drag action to a cell
+        function applyDragToCell(r, c) {
+            const lvl = LEVELS_DATA[currentLevelIndex];
+            const N = lvl.size;
+            if (r < 0 || r >= N || c < 0 || c >= N) return;
+            const val = board[r][c];
+
+            if (dragAction === 'cross') {
+                if (val === 0) {
+                    board[r][c] = 1;
+                    updateCellDOM(r, c);
+                    playPurrThrottled();
+                }
+            } else if (dragAction === 'erase') {
+                if (val === 1) {
+                    board[r][c] = 0;
+                    updateCellDOM(r, c);
+                    playPurrThrottled();
+                }
+            }
+        }
+
+        // Interpolate line between previous and current cell to ensure 100% coverage even when swiping fast
+        function applyDragToLine(r1, c1, r2, c2) {
+            const dr = Math.abs(r2 - r1);
+            const dc = Math.abs(c2 - c1);
+            const sr = r1 < r2 ? 1 : -1;
+            const sc = c1 < c2 ? 1 : -1;
+            let err = dr - dc;
+            let currR = r1;
+            let currC = c1;
+
+            while (true) {
+                applyDragToCell(currR, currC);
+                if (currR === r2 && currC === c2) break;
+                const e2 = 2 * err;
+                if (e2 > -dc) {
+                    err -= dc;
+                    currR += sr;
+                }
+                if (e2 < dr) {
+                    err += dr;
+                    currC += sc;
+                }
+            }
         }
 
         // Render Board Grid matching exact screenshot (rounded tiles, gaps, solid region colors)
-        function renderBoard() {
+        function renderBoard(rebuild = false) {
             const lvl = LEVELS_DATA[currentLevelIndex];
             const N = lvl.size;
 
@@ -2633,9 +2713,19 @@
             boardEl.style.height = `${boardPx}px`;
             boardEl.style.gridTemplateColumns = `repeat(${N}, ${cellSize}px)`;
             boardEl.style.gridTemplateRows = `repeat(${N}, ${cellSize}px)`;
-            boardEl.innerHTML = '';
 
-            const conflicts = getBoardConflicts();
+            // Fast path: if cells already built and not forced rebuild, just update their display
+            if (!rebuild && boardEl.children.length === N * N) {
+                for (let r = 0; r < N; r++) {
+                    for (let c = 0; c < N; c++) {
+                        updateCellDOM(r, c);
+                    }
+                }
+                updateCatTrackUI();
+                return;
+            }
+
+            boardEl.innerHTML = '';
 
             for (let r = 0; r < N; r++) {
                 for (let c = 0; c < N; c++) {
@@ -2654,6 +2744,7 @@
                     cell.style.cursor = 'pointer';
                     cell.style.direction = 'ltr';
                     cell.style.boxShadow = 'inset 0 1px 1px rgba(255,255,255,0.4), 0 1.5px 3px rgba(0,0,0,0.06)';
+                    cell.style.touchAction = 'none';
 
                     // Solid distinct region color
                     const regId = lvl.grid[r][c];
@@ -2661,33 +2752,37 @@
 
                     // Value rendering
                     const val = board[r][c];
-                    const isConflicted = conflicts.has(`${r},${c}`);
-
                     if (val === 2) {
-                        // Cat Emoji 🐱
                         const emojiSize = Math.floor(cellSize * 0.72);
                         cell.innerHTML = `<div style="font-size: ${emojiSize}px; line-height: 1; user-select: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18)); pointer-events: none;">🐱</div>`;
                     } else if (val === 1) {
-                        // White Cross (Single click)
                         cell.innerHTML = getCrossSVG('#FFFFFF');
                     } else if (val === 3) {
-                        // Red Cross (Incorrect Cat attempt) - stays static, no shake on re-renders
                         cell.innerHTML = getCrossSVG('#EF4444');
                     }
 
-                    // INTERACTION EVENTS: Single Click = X, Double Click = Cat!
+                    // INTERACTION EVENTS: Single Click = X, Double Click = Cat, Drag = smooth continuous paint
                     cell.addEventListener('pointerdown', (e) => {
                         e.preventDefault();
                         if (!gameActive) return;
-                        isDragging = true;
-                        dragCellTarget = { r, c };
-                        handleCellPointerDown(r, c);
-                    });
 
-                    cell.addEventListener('pointerenter', (e) => {
-                        if (isDragging && gameActive) {
-                            handleCellDrag(r, c);
+                        isDragging = true;
+                        dragMoved = false;
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                        dragStartCell = { r, c };
+                        lastProcessedCell = null;
+
+                        const currentVal = board[r][c];
+                        if (currentVal === 1) {
+                            dragAction = 'erase';
+                        } else if (currentVal === 0) {
+                            dragAction = 'cross';
+                        } else {
+                            dragAction = 'none';
                         }
+
+                        handleCellPointerDown(r, c);
                     });
 
                     boardEl.appendChild(cell);
@@ -2723,13 +2818,71 @@
                 clickTimer = setTimeout(() => {
                     clickTimer = null;
                     lastClickedCell = null;
-                    executeSingleClick(r, c);
-                }, 240);
+                    if (!dragMoved) {
+                        executeSingleClick(r, c);
+                    }
+                }, 230);
             }
         }
 
+        // Global pointer move to handle continuous dragging across both touch and mouse seamlessly
+        function handleGlobalPointerMove(e) {
+            if (!isDragging || !gameActive || dragAction === 'none') return;
+
+            const dist = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
+            if (!dragMoved && dist > 5) {
+                dragMoved = true;
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                }
+                lastClickedCell = null;
+                lastClickTime = 0;
+
+                saveHistory();
+
+                if (dragStartCell) {
+                    applyDragToCell(dragStartCell.r, dragStartCell.c);
+                    lastProcessedCell = { r: dragStartCell.r, c: dragStartCell.c };
+                }
+            }
+
+            if (dragMoved) {
+                const el = document.elementFromPoint(e.clientX, e.clientY);
+                const cellEl = el ? el.closest('.md-cell') : null;
+                if (cellEl && boardEl.contains(cellEl)) {
+                    const cr = parseInt(cellEl.dataset.row);
+                    const cc = parseInt(cellEl.dataset.col);
+                    if (!isNaN(cr) && !isNaN(cc)) {
+                        if (lastProcessedCell) {
+                            applyDragToLine(lastProcessedCell.r, lastProcessedCell.c, cr, cc);
+                        } else {
+                            applyDragToCell(cr, cc);
+                        }
+                        lastProcessedCell = { r: cr, c: cc };
+                    }
+                }
+            }
+        }
+
+        // Global pointer up to finalize drag
+        function handleGlobalPointerUp() {
+            if (isDragging && dragMoved) {
+                checkVictoryCondition();
+            }
+            isDragging = false;
+            dragMoved = false;
+            dragStartCell = null;
+            lastProcessedCell = null;
+        }
+
+        window.addEventListener('pointermove', handleGlobalPointerMove);
+        window.addEventListener('pointerup', handleGlobalPointerUp);
+        window.addEventListener('pointercancel', handleGlobalPointerUp);
+
         // SINGLE CLICK: Toggle White Cross (✕)
         function executeSingleClick(r, c) {
+            if (dragMoved) return;
             saveHistory();
             const currentVal = board[r][c];
 
@@ -2747,12 +2900,14 @@
                 playPurr();
             }
 
-            renderBoard();
+            updateCellDOM(r, c);
+            updateCatTrackUI();
             checkVictoryCondition();
         }
 
         // DOUBLE CLICK: Place Cat 🐱 or Red Cross if wrong!
         function executeDoubleClick(r, c) {
+            if (dragMoved) return;
             saveHistory();
             const currentVal = board[r][c];
 
@@ -2760,10 +2915,13 @@
                 // Already Cat -> remove it
                 board[r][c] = 0;
                 playPurr();
+                updateCellDOM(r, c);
+                updateCatTrackUI();
             } else if (currentVal === 3) {
                 // Already Red Cross -> remove it
                 board[r][c] = 0;
                 playPurr();
+                updateCellDOM(r, c);
             } else {
                 const lvl = LEVELS_DATA[currentLevelIndex];
                 const isCorrect = (lvl.solution[r] === c);
@@ -2772,7 +2930,8 @@
                     // Correct placement: Place Cat 🐱!
                     board[r][c] = 2;
                     playMeow();
-                    renderBoard();
+                    updateCellDOM(r, c);
+                    updateCatTrackUI();
                     const targetCell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
                     if (targetCell) {
                         targetCell.style.animation = 'popBounce 0.25s ease-out';
@@ -2787,7 +2946,7 @@
                     mistakes++;
                     updateFishTreatsUI();
 
-                    renderBoard();
+                    updateCellDOM(r, c);
                     const targetCell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
                     if (targetCell) {
                         targetCell.style.animation = 'shakeEffect 0.35s ease-out';
@@ -2802,24 +2961,8 @@
                 }
             }
 
-            renderBoard();
             checkVictoryCondition();
         }
-
-        // Drag to cross out multiple squares in one stroke
-        function handleCellDrag(r, c) {
-            if (board[r][c] === 0) {
-                saveHistory();
-                board[r][c] = 1;
-                playPurr();
-                renderBoard();
-            }
-        }
-
-        // Global pointer up to end drag
-        window.addEventListener('pointerup', () => {
-            isDragging = false;
-        });
 
         // Conflict Detection
         function getBoardConflicts() {
@@ -3084,15 +3227,20 @@
             updateFishTreatsUI();
         });
 
-        window.addEventListener('resize', () => {
+        function onResize() {
             if (container.contains(boardEl)) {
-                renderBoard();
+                renderBoard(true);
             }
-        });
+        }
+        window.addEventListener('resize', onResize);
 
         function cleanup() {
             clearInterval(timerInterval);
             if (clickTimer) clearTimeout(clickTimer);
+            window.removeEventListener('pointermove', handleGlobalPointerMove);
+            window.removeEventListener('pointerup', handleGlobalPointerUp);
+            window.removeEventListener('pointercancel', handleGlobalPointerUp);
+            window.removeEventListener('resize', onResize);
             container.removeEventListener('game-exit', cleanup);
         }
         container.addEventListener('game-exit', cleanup);
