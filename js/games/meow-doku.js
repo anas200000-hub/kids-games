@@ -2252,8 +2252,19 @@
         let dragStartY = 0;
         let dragStartCell = null;
         let lastProcessedCell = null;
-        let dragAction = 'cross'; // 'cross', 'erase', or 'none'
+        let dragAction = 'none'; // 'cross', 'erase', or 'none'
         let lastSoundTime = 0;
+
+        // Double-click timing tracker
+        let lastTapCell = null;
+        let lastTapTime = 0;
+
+        // Board geometry cache for zero-latency coordinate calculation
+        let currentN = 5;
+        let currentCellSize = 60;
+        let currentGap = 3.5;
+        let currentPadding = 6;
+        let cachedBoardRect = null;
 
         let timerSeconds = 0;
         let timerInterval = null;
@@ -2262,11 +2273,6 @@
         const maxHearts = 3;
         let heartsLeft = 3;
         let gameActive = true;
-
-        // Double-click & Single-click timing tracker
-        let clickTimer = null;
-        let lastClickedCell = null;
-        let lastClickTime = 0;
 
         // Audio helper
         function playMeow() {
@@ -2633,13 +2639,40 @@
             renderBoard(true);
         }
 
+        // Update Board Geometry cache for pure coordinate calculation
+        function updateBoardGeometry() {
+            if (boardEl) {
+                cachedBoardRect = boardEl.getBoundingClientRect();
+            }
+        }
+
+        // Ultra-fast coordinate mapper: maps screen (x, y) directly to grid (r, c) in 0.0001ms
+        function getCellFromCoords(clientX, clientY) {
+            if (!cachedBoardRect) updateBoardGeometry();
+            if (!cachedBoardRect) return null;
+
+            const x = clientX - (cachedBoardRect.left + currentPadding);
+            const y = clientY - (cachedBoardRect.top + currentPadding);
+
+            if (x < -currentGap || y < -currentGap) return null;
+
+            const step = currentCellSize + currentGap;
+            const c = Math.floor(x / step);
+            const r = Math.floor(y / step);
+
+            if (r >= 0 && r < currentN && c >= 0 && c < currentN) {
+                return { r, c };
+            }
+            return null;
+        }
+
         // Update DOM for a single cell without rebuilding the grid (instant, zero-lag)
         function updateCellDOM(r, c) {
             const cell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
             if (!cell) return;
             const val = board[r][c];
             if (val === 2) {
-                const cellSize = cell.offsetWidth || 50;
+                const cellSize = cell.offsetWidth || currentCellSize || 50;
                 const emojiSize = Math.floor(cellSize * 0.72);
                 cell.innerHTML = `<div style="font-size: ${emojiSize}px; line-height: 1; user-select: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18)); pointer-events: none;">🐱</div>`;
             } else if (val === 1) {
@@ -2651,11 +2684,9 @@
             }
         }
 
-        // Apply drag action to a cell
+        // Apply drag action to a cell (instantaneous)
         function applyDragToCell(r, c) {
-            const lvl = LEVELS_DATA[currentLevelIndex];
-            const N = lvl.size;
-            if (r < 0 || r >= N || c < 0 || c >= N) return;
+            if (r < 0 || r >= currentN || c < 0 || c >= currentN) return;
             const val = board[r][c];
 
             if (dragAction === 'cross') {
@@ -2665,7 +2696,7 @@
                     playPurrThrottled();
                 }
             } else if (dragAction === 'erase') {
-                if (val === 1) {
+                if (val === 1 || val === 3) {
                     board[r][c] = 0;
                     updateCellDOM(r, c);
                     playPurrThrottled();
@@ -2698,44 +2729,134 @@
             }
         }
 
+        // Pointer down handler: INSTANT ZERO-LATENCY RESPONSE + Double-tap detection
+        function handlePointerDownOnCell(r, c, clientX, clientY) {
+            const lvl = LEVELS_DATA[currentLevelIndex];
+            const now = Date.now();
+            const isDoubleTap = (lastTapCell && lastTapCell.r === r && lastTapCell.c === c && (now - lastTapTime) < 320);
+
+            isDragging = true;
+            dragMoved = false;
+            dragStartX = clientX;
+            dragStartY = clientY;
+            dragStartCell = { r, c };
+            lastProcessedCell = { r, c };
+
+            if (isDoubleTap) {
+                lastTapCell = null;
+                lastTapTime = 0;
+                dragAction = 'none';
+
+                saveHistory();
+                const currentVal = board[r][c];
+
+                if (currentVal === 2) {
+                    // Cat -> remove it
+                    board[r][c] = 0;
+                    playPurr();
+                    updateCellDOM(r, c);
+                    updateCatTrackUI();
+                } else {
+                    // Place Cat or Red Cross!
+                    const isCorrect = (lvl.solution[r] === c);
+                    if (isCorrect) {
+                        board[r][c] = 2;
+                        playMeow();
+                        updateCellDOM(r, c);
+                        updateCatTrackUI();
+                        const targetCell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
+                        if (targetCell) {
+                            targetCell.style.animation = 'popBounce 0.25s ease-out';
+                        }
+                    } else {
+                        board[r][c] = 3;
+                        playErrorSound();
+                        heartsLeft = Math.max(0, heartsLeft - 1);
+                        mistakes++;
+                        updateFishTreatsUI();
+                        updateCellDOM(r, c);
+                        const targetCell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
+                        if (targetCell) {
+                            targetCell.style.animation = 'shakeEffect 0.35s ease-out';
+                        }
+                        if (heartsLeft === 0) {
+                            handleGameOver();
+                            return;
+                        }
+                    }
+                }
+                checkVictoryCondition();
+                return;
+            }
+
+            // Single tap or drag initiation: instant action at millisecond 0!
+            lastTapCell = { r, c };
+            lastTapTime = now;
+
+            const currentVal = board[r][c];
+            if (currentVal === 0) {
+                dragAction = 'cross';
+                saveHistory();
+                board[r][c] = 1;
+                updateCellDOM(r, c);
+                playPurrThrottled();
+            } else if (currentVal === 1 || currentVal === 3) {
+                dragAction = 'erase';
+                saveHistory();
+                board[r][c] = 0;
+                updateCellDOM(r, c);
+                playPurrThrottled();
+            } else if (currentVal === 2) {
+                // Tapping a cat clears it
+                dragAction = 'none';
+                saveHistory();
+                board[r][c] = 0;
+                updateCellDOM(r, c);
+                playPurr();
+                updateCatTrackUI();
+            }
+        }
+
         // Render Board Grid matching exact screenshot (rounded tiles, gaps, solid region colors)
         function renderBoard(rebuild = false) {
             const lvl = LEVELS_DATA[currentLevelIndex];
-            const N = lvl.size;
+            currentN = lvl.size;
 
             const containerWidth = Math.min(window.innerWidth - 32, 400);
-            const gap = 3.5;
-            const totalGaps = (N - 1) * gap + 12; // 12 for padding
-            const cellSize = Math.floor((containerWidth - totalGaps) / N);
-            const boardPx = cellSize * N + (N - 1) * gap;
+            currentGap = 3.5;
+            currentPadding = 6;
+            const totalGaps = (currentN - 1) * currentGap + currentPadding * 2;
+            currentCellSize = Math.floor((containerWidth - totalGaps) / currentN);
+            const boardPx = currentCellSize * currentN + (currentN - 1) * currentGap;
 
             boardEl.style.width = `${boardPx}px`;
             boardEl.style.height = `${boardPx}px`;
-            boardEl.style.gridTemplateColumns = `repeat(${N}, ${cellSize}px)`;
-            boardEl.style.gridTemplateRows = `repeat(${N}, ${cellSize}px)`;
+            boardEl.style.gridTemplateColumns = `repeat(${currentN}, ${currentCellSize}px)`;
+            boardEl.style.gridTemplateRows = `repeat(${currentN}, ${currentCellSize}px)`;
 
             // Fast path: if cells already built and not forced rebuild, just update their display
-            if (!rebuild && boardEl.children.length === N * N) {
-                for (let r = 0; r < N; r++) {
-                    for (let c = 0; c < N; c++) {
+            if (!rebuild && boardEl.children.length === currentN * currentN) {
+                for (let r = 0; r < currentN; r++) {
+                    for (let c = 0; c < currentN; c++) {
                         updateCellDOM(r, c);
                     }
                 }
                 updateCatTrackUI();
+                updateBoardGeometry();
                 return;
             }
 
             boardEl.innerHTML = '';
 
-            for (let r = 0; r < N; r++) {
-                for (let c = 0; c < N; c++) {
+            for (let r = 0; r < currentN; r++) {
+                for (let c = 0; c < currentN; c++) {
                     const cell = document.createElement('div');
                     cell.classList.add('md-cell');
                     cell.dataset.row = r;
                     cell.dataset.col = c;
-                    cell.style.width = `${cellSize}px`;
-                    cell.style.height = `${cellSize}px`;
-                    cell.style.borderRadius = `${Math.max(5, Math.floor(cellSize * 0.18))}px`;
+                    cell.style.width = `${currentCellSize}px`;
+                    cell.style.height = `${currentCellSize}px`;
+                    cell.style.borderRadius = `${Math.max(5, Math.floor(currentCellSize * 0.18))}px`;
                     cell.style.display = 'flex';
                     cell.style.alignItems = 'center';
                     cell.style.justifyContent = 'center';
@@ -2753,7 +2874,7 @@
                     // Value rendering
                     const val = board[r][c];
                     if (val === 2) {
-                        const emojiSize = Math.floor(cellSize * 0.72);
+                        const emojiSize = Math.floor(currentCellSize * 0.72);
                         cell.innerHTML = `<div style="font-size: ${emojiSize}px; line-height: 1; user-select: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18)); pointer-events: none;">🐱</div>`;
                     } else if (val === 1) {
                         cell.innerHTML = getCrossSVG('#FFFFFF');
@@ -2761,68 +2882,12 @@
                         cell.innerHTML = getCrossSVG('#EF4444');
                     }
 
-                    // INTERACTION EVENTS: Single Click = X, Double Click = Cat, Drag = smooth continuous paint
-                    cell.addEventListener('pointerdown', (e) => {
-                        e.preventDefault();
-                        if (!gameActive) return;
-
-                        isDragging = true;
-                        dragMoved = false;
-                        dragStartX = e.clientX;
-                        dragStartY = e.clientY;
-                        dragStartCell = { r, c };
-                        lastProcessedCell = null;
-
-                        const currentVal = board[r][c];
-                        if (currentVal === 1) {
-                            dragAction = 'erase';
-                        } else if (currentVal === 0) {
-                            dragAction = 'cross';
-                        } else {
-                            dragAction = 'none';
-                        }
-
-                        handleCellPointerDown(r, c);
-                    });
-
                     boardEl.appendChild(cell);
                 }
             }
 
             updateCatTrackUI();
-        }
-
-        // Pointer Click & Double Click Handling
-        function handleCellPointerDown(r, c) {
-            const now = Date.now();
-            const isSame = lastClickedCell && lastClickedCell.r === r && lastClickedCell.c === c;
-            const elapsed = now - lastClickTime;
-
-            if (isSame && elapsed < 280) {
-                // DOUBLE CLICK: Place Cat or Red Cross if wrong!
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                }
-                lastClickTime = 0;
-                lastClickedCell = null;
-                executeDoubleClick(r, c);
-            } else {
-                // First click: queue single click
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                }
-                lastClickTime = now;
-                lastClickedCell = { r, c };
-
-                clickTimer = setTimeout(() => {
-                    clickTimer = null;
-                    lastClickedCell = null;
-                    if (!dragMoved) {
-                        executeSingleClick(r, c);
-                    }
-                }, 230);
-            }
+            updateBoardGeometry();
         }
 
         // Global pointer move to handle continuous dragging across both touch and mouse seamlessly
@@ -2830,139 +2895,47 @@
             if (!isDragging || !gameActive || dragAction === 'none') return;
 
             const dist = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
-            if (!dragMoved && dist > 5) {
+            if (dist > 5) {
                 dragMoved = true;
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                }
-                lastClickedCell = null;
-                lastClickTime = 0;
-
-                saveHistory();
-
-                if (dragStartCell) {
-                    applyDragToCell(dragStartCell.r, dragStartCell.c);
-                    lastProcessedCell = { r: dragStartCell.r, c: dragStartCell.c };
-                }
+                lastTapCell = null; // Clear double-tap when dragging
             }
 
-            if (dragMoved) {
-                const el = document.elementFromPoint(e.clientX, e.clientY);
-                const cellEl = el ? el.closest('.md-cell') : null;
-                if (cellEl && boardEl.contains(cellEl)) {
-                    const cr = parseInt(cellEl.dataset.row);
-                    const cc = parseInt(cellEl.dataset.col);
-                    if (!isNaN(cr) && !isNaN(cc)) {
-                        if (lastProcessedCell) {
-                            applyDragToLine(lastProcessedCell.r, lastProcessedCell.c, cr, cc);
-                        } else {
-                            applyDragToCell(cr, cc);
-                        }
-                        lastProcessedCell = { r: cr, c: cc };
-                    }
+            const cell = getCellFromCoords(e.clientX, e.clientY);
+            if (cell) {
+                if (lastProcessedCell) {
+                    applyDragToLine(lastProcessedCell.r, lastProcessedCell.c, cell.r, cell.c);
+                } else {
+                    applyDragToCell(cell.r, cell.c);
                 }
+                lastProcessedCell = { r: cell.r, c: cell.c };
             }
         }
 
         // Global pointer up to finalize drag
         function handleGlobalPointerUp() {
-            if (isDragging && dragMoved) {
+            if (isDragging) {
                 checkVictoryCondition();
             }
             isDragging = false;
             dragMoved = false;
-            dragStartCell = null;
             lastProcessedCell = null;
         }
+
+        // Delegated pointer down on boardEl
+        boardEl.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (!gameActive) return;
+
+            updateBoardGeometry();
+            const cell = getCellFromCoords(e.clientX, e.clientY);
+            if (cell) {
+                handlePointerDownOnCell(cell.r, cell.c, e.clientX, e.clientY);
+            }
+        });
 
         window.addEventListener('pointermove', handleGlobalPointerMove);
         window.addEventListener('pointerup', handleGlobalPointerUp);
         window.addEventListener('pointercancel', handleGlobalPointerUp);
-
-        // SINGLE CLICK: Toggle White Cross (✕)
-        function executeSingleClick(r, c) {
-            if (dragMoved) return;
-            saveHistory();
-            const currentVal = board[r][c];
-
-            if (currentVal === 1 || currentVal === 3) {
-                // Already a cross (white or red) -> clear it
-                board[r][c] = 0;
-                playPurr();
-            } else if (currentVal === 0) {
-                // Empty -> place white cross
-                board[r][c] = 1;
-                playPurr();
-            } else if (currentVal === 2) {
-                // Has Cat -> clear it
-                board[r][c] = 0;
-                playPurr();
-            }
-
-            updateCellDOM(r, c);
-            updateCatTrackUI();
-            checkVictoryCondition();
-        }
-
-        // DOUBLE CLICK: Place Cat 🐱 or Red Cross if wrong!
-        function executeDoubleClick(r, c) {
-            if (dragMoved) return;
-            saveHistory();
-            const currentVal = board[r][c];
-
-            if (currentVal === 2) {
-                // Already Cat -> remove it
-                board[r][c] = 0;
-                playPurr();
-                updateCellDOM(r, c);
-                updateCatTrackUI();
-            } else if (currentVal === 3) {
-                // Already Red Cross -> remove it
-                board[r][c] = 0;
-                playPurr();
-                updateCellDOM(r, c);
-            } else {
-                const lvl = LEVELS_DATA[currentLevelIndex];
-                const isCorrect = (lvl.solution[r] === c);
-
-                if (isCorrect) {
-                    // Correct placement: Place Cat 🐱!
-                    board[r][c] = 2;
-                    playMeow();
-                    updateCellDOM(r, c);
-                    updateCatTrackUI();
-                    const targetCell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
-                    if (targetCell) {
-                        targetCell.style.animation = 'popBounce 0.25s ease-out';
-                    }
-                    checkVictoryCondition();
-                    return;
-                } else {
-                    // Incorrect placement: Place Red Cross and deduct 1 fish life!
-                    board[r][c] = 3;
-                    playErrorSound();
-                    heartsLeft = Math.max(0, heartsLeft - 1);
-                    mistakes++;
-                    updateFishTreatsUI();
-
-                    updateCellDOM(r, c);
-                    const targetCell = boardEl.querySelector(`.md-cell[data-row="${r}"][data-col="${c}"]`);
-                    if (targetCell) {
-                        targetCell.style.animation = 'shakeEffect 0.35s ease-out';
-                    }
-
-                    if (heartsLeft === 0) {
-                        handleGameOver();
-                        return;
-                    }
-                    checkVictoryCondition();
-                    return;
-                }
-            }
-
-            checkVictoryCondition();
-        }
 
         // Conflict Detection
         function getBoardConflicts() {
@@ -3236,7 +3209,6 @@
 
         function cleanup() {
             clearInterval(timerInterval);
-            if (clickTimer) clearTimeout(clickTimer);
             window.removeEventListener('pointermove', handleGlobalPointerMove);
             window.removeEventListener('pointerup', handleGlobalPointerUp);
             window.removeEventListener('pointercancel', handleGlobalPointerUp);
