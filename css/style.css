@@ -2181,6 +2181,10 @@ canvas {
 /* MEOWDOKU (سودوكو القطط) */
 /* ============================================================= */
 .md-cell {
+    touch-action: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
     transition: transform 0.1s ease, filter 0.15s ease;
 }
 

@@ -2344,7 +2344,7 @@
 
         // Layout HTML matching the exact screenshot
         const html = `
-            <div class="meow-doku-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 480px; margin: 0 auto; user-select: none; font-family: var(--font-kids), 'Tajawal', sans-serif; direction: ltr; box-sizing: border-box; padding: 4px 10px; background: #FAF7F2; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+            <div class="meow-doku-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 480px; margin: 0 auto; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; font-family: var(--font-kids), 'Tajawal', sans-serif; direction: ltr; box-sizing: border-box; padding: 4px 10px; background: #FAF7F2; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                 
                 <!-- TOP HEADER: Stages, Level & Score, Settings -->
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 4px 4px; box-sizing: border-box;">
@@ -2403,8 +2403,8 @@
                 </div>
 
                 <!-- MAIN PUZZLE BOARD CONTAINER (Exact rounded pastel tiles) -->
-                <div id="mdBoardWrapper" style="position: relative; display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 10px; direction: ltr;">
-                    <div id="mdBoard" dir="ltr" style="display: grid; direction: ltr; background: #FFFFFF; border: 4.5px solid #EAE5DC; border-radius: 20px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); gap: 3.5px; touch-action: none; box-sizing: border-box;"></div>
+                <div id="mdBoardWrapper" style="position: relative; display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 10px; direction: ltr; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;">
+                    <div id="mdBoard" dir="ltr" style="display: grid; direction: ltr; background: #FFFFFF; border: 4.5px solid #EAE5DC; border-radius: 20px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); gap: 3.5px; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; box-sizing: border-box;"></div>
                 </div>
 
                 <!-- CONTROLS & INSTRUCTIONS BANNER -->
@@ -2890,17 +2890,17 @@
             updateBoardGeometry();
         }
 
-        // Global pointer move to handle continuous dragging across both touch and mouse seamlessly
-        function handleGlobalPointerMove(e) {
+        // Continuous dragging across both touch and mouse
+        function handleGlobalMove(clientX, clientY) {
             if (!isDragging || !gameActive || dragAction === 'none') return;
 
-            const dist = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
-            if (dist > 5) {
+            const dist = Math.hypot(clientX - dragStartX, clientY - dragStartY);
+            if (dist > 3) {
                 dragMoved = true;
                 lastTapCell = null; // Clear double-tap when dragging
             }
 
-            const cell = getCellFromCoords(e.clientX, e.clientY);
+            const cell = getCellFromCoords(clientX, clientY);
             if (cell) {
                 if (lastProcessedCell) {
                     applyDragToLine(lastProcessedCell.r, lastProcessedCell.c, cell.r, cell.c);
@@ -2911,8 +2911,7 @@
             }
         }
 
-        // Global pointer up to finalize drag
-        function handleGlobalPointerUp() {
+        function handleGlobalUp() {
             if (isDragging) {
                 checkVictoryCondition();
             }
@@ -2921,21 +2920,60 @@
             lastProcessedCell = null;
         }
 
-        // Delegated pointer down on boardEl
-        boardEl.addEventListener('pointerdown', (e) => {
+        // TOUCH EVENTS: with { passive: false } and e.preventDefault() -> ELIMINATES ANY LONG-PRESS OR SCROLL DELAY!
+        function onBoardTouchStart(e) {
+            if (!gameActive || e.touches.length === 0) return;
+            e.preventDefault(); // Stop mobile browser pan/scroll gesture immediately
+            const touch = e.touches[0];
+            updateBoardGeometry();
+            const cell = getCellFromCoords(touch.clientX, touch.clientY);
+            if (cell) {
+                handlePointerDownOnCell(cell.r, cell.c, touch.clientX, touch.clientY);
+            }
+        }
+
+        function onWindowTouchMove(e) {
+            if (!isDragging || !gameActive || dragAction === 'none' || e.touches.length === 0) return;
+            e.preventDefault(); // Stop page scrolling during drag
+            const touch = e.touches[0];
+            handleGlobalMove(touch.clientX, touch.clientY);
+        }
+
+        function onWindowTouchEnd(e) {
+            handleGlobalUp();
+        }
+
+        boardEl.addEventListener('touchstart', onBoardTouchStart, { passive: false });
+        window.addEventListener('touchmove', onWindowTouchMove, { passive: false });
+        window.addEventListener('touchend', onWindowTouchEnd, { passive: false });
+        window.addEventListener('touchcancel', onWindowTouchEnd, { passive: false });
+
+        // MOUSE / DESKTOP POINTER EVENTS:
+        function onBoardMouseDown(e) {
+            if (e.pointerType === 'touch') return;
             e.preventDefault();
             if (!gameActive) return;
-
             updateBoardGeometry();
             const cell = getCellFromCoords(e.clientX, e.clientY);
             if (cell) {
                 handlePointerDownOnCell(cell.r, cell.c, e.clientX, e.clientY);
             }
-        });
+        }
 
-        window.addEventListener('pointermove', handleGlobalPointerMove);
-        window.addEventListener('pointerup', handleGlobalPointerUp);
-        window.addEventListener('pointercancel', handleGlobalPointerUp);
+        function onWindowMouseMove(e) {
+            if (e.pointerType === 'touch') return;
+            if (!isDragging || !gameActive || dragAction === 'none') return;
+            handleGlobalMove(e.clientX, e.clientY);
+        }
+
+        function onWindowMouseUp(e) {
+            if (e.pointerType === 'touch') return;
+            handleGlobalUp();
+        }
+
+        boardEl.addEventListener('pointerdown', onBoardMouseDown);
+        window.addEventListener('pointermove', onWindowMouseMove);
+        window.addEventListener('pointerup', onWindowMouseUp);
 
         // Conflict Detection
         function getBoardConflicts() {
@@ -3209,9 +3247,13 @@
 
         function cleanup() {
             clearInterval(timerInterval);
-            window.removeEventListener('pointermove', handleGlobalPointerMove);
-            window.removeEventListener('pointerup', handleGlobalPointerUp);
-            window.removeEventListener('pointercancel', handleGlobalPointerUp);
+            boardEl.removeEventListener('touchstart', onBoardTouchStart);
+            window.removeEventListener('touchmove', onWindowTouchMove);
+            window.removeEventListener('touchend', onWindowTouchEnd);
+            window.removeEventListener('touchcancel', onWindowTouchEnd);
+            boardEl.removeEventListener('pointerdown', onBoardMouseDown);
+            window.removeEventListener('pointermove', onWindowMouseMove);
+            window.removeEventListener('pointerup', onWindowMouseUp);
             window.removeEventListener('resize', onResize);
             container.removeEventListener('game-exit', cleanup);
         }
