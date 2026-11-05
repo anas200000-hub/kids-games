@@ -13,7 +13,7 @@
   {
     "id": 1,
     "size": 5,
-    "difficulty": "medium",
+    "difficulty": "easy",
     "title": "البداية اللطيفة",
     "grid": [
       [
@@ -63,7 +63,7 @@
   {
     "id": 2,
     "size": 5,
-    "difficulty": "medium",
+    "difficulty": "easy",
     "title": "حديقة الفراشات",
     "grid": [
       [
@@ -113,7 +113,7 @@
   {
     "id": 3,
     "size": 5,
-    "difficulty": "medium",
+    "difficulty": "easy",
     "title": "ممر السمكات",
     "grid": [
       [
@@ -163,7 +163,7 @@
   {
     "id": 4,
     "size": 6,
-    "difficulty": "medium",
+    "difficulty": "easy",
     "title": "مربعات الصوف",
     "grid": [
       [
@@ -227,7 +227,7 @@
   {
     "id": 5,
     "size": 6,
-    "difficulty": "medium",
+    "difficulty": "easy",
     "title": "سلم المياو",
     "grid": [
       [
@@ -291,7 +291,7 @@
   {
     "id": 6,
     "size": 6,
-    "difficulty": "medium",
+    "difficulty": "easy",
     "title": "متاهة الخيوط",
     "grid": [
       [
@@ -355,7 +355,7 @@
   {
     "id": 7,
     "size": 7,
-    "difficulty": "hard",
+    "difficulty": "easy",
     "title": "مملكة السيامي",
     "grid": [
       [
@@ -435,7 +435,7 @@
   {
     "id": 8,
     "size": 7,
-    "difficulty": "hard",
+    "difficulty": "easy",
     "title": "برج الشيرازي",
     "grid": [
       [
@@ -515,7 +515,7 @@
   {
     "id": 9,
     "size": 7,
-    "difficulty": "hard",
+    "difficulty": "medium",
     "title": "لغز المخلب الذكي",
     "grid": [
       [
@@ -595,7 +595,7 @@
   {
     "id": 10,
     "size": 7,
-    "difficulty": "hard",
+    "difficulty": "medium",
     "title": "غابة النعناع البري",
     "grid": [
       [
@@ -675,7 +675,7 @@
   {
     "id": 11,
     "size": 8,
-    "difficulty": "hard",
+    "difficulty": "medium",
     "title": "عرين الماكرين",
     "grid": [
       [
@@ -773,7 +773,7 @@
   {
     "id": 12,
     "size": 8,
-    "difficulty": "hard",
+    "difficulty": "medium",
     "title": "خطوط التنافر",
     "grid": [
       [
@@ -871,7 +871,7 @@
   {
     "id": 13,
     "size": 8,
-    "difficulty": "hard",
+    "difficulty": "medium",
     "title": "حصن الكاليكو",
     "grid": [
       [
@@ -969,7 +969,7 @@
   {
     "id": 14,
     "size": 8,
-    "difficulty": "hard",
+    "difficulty": "medium",
     "title": "أحجية الجيران",
     "grid": [
       [
@@ -1067,7 +1067,7 @@
   {
     "id": 15,
     "size": 8,
-    "difficulty": "expert",
+    "difficulty": "medium",
     "title": "دهاء الهررة الكبار",
     "grid": [
       [
@@ -1165,7 +1165,7 @@
   {
     "id": 16,
     "size": 8,
-    "difficulty": "expert",
+    "difficulty": "medium",
     "title": "خريطة البسيسة الملكية",
     "grid": [
       [
@@ -1263,7 +1263,7 @@
   {
     "id": 17,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "عرش ملك القطط",
     "grid": [
       [
@@ -1381,7 +1381,7 @@
   {
     "id": 18,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "متاهة الديجيتال",
     "grid": [
       [
@@ -1499,7 +1499,7 @@
   {
     "id": 19,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "حسابات النمر الصغير",
     "grid": [
       [
@@ -1617,7 +1617,7 @@
   {
     "id": 20,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "تحدي الأستاذ مياو",
     "grid": [
       [
@@ -1735,7 +1735,7 @@
   {
     "id": 21,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "أطلال الصناديق",
     "grid": [
       [
@@ -1853,7 +1853,7 @@
   {
     "id": 22,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "عاصفة المخالب",
     "grid": [
       [
@@ -1971,7 +1971,7 @@
   {
     "id": 23,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "القلعة المحصنة",
     "grid": [
       [
@@ -2089,7 +2089,7 @@
   {
     "id": 24,
     "size": 9,
-    "difficulty": "expert",
+    "difficulty": "hard",
     "title": "أسطورة المياودوكو",
     "grid": [
       [
@@ -2241,6 +2241,7 @@
 </svg>`;
 
         // State variables
+        let currentDifficulty = localStorage.getItem('meowdoku_difficulty') || 'easy';
         let currentLevelIndex = parseInt(localStorage.getItem('meowdoku_current_level') || '0');
         if (currentLevelIndex >= LEVELS_DATA.length) currentLevelIndex = 0;
 
@@ -2254,6 +2255,10 @@
         let lastProcessedCell = null;
         let dragAction = 'none'; // 'cross', 'erase', or 'none'
         let lastSoundTime = 0;
+
+        // Exactly 3 hints at the start
+        let hintsLeft = parseInt(localStorage.getItem('meowdoku_hints') !== null ? localStorage.getItem('meowdoku_hints') : '3');
+        if (isNaN(hintsLeft) || hintsLeft < 0) hintsLeft = 3;
 
         // Double-click timing tracker
         let lastTapCell = null;
@@ -2346,26 +2351,31 @@
         const html = `
             <div class="meow-doku-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 480px; margin: 0 auto; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; font-family: var(--font-kids), 'Tajawal', sans-serif; direction: ltr; box-sizing: border-box; padding: 4px 10px; background: #FAF7F2; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                 
-                <!-- TOP HEADER: Stages, Level & Score, Settings -->
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 4px 4px; box-sizing: border-box;">
+                <!-- TOP HEADER: Stages, Difficulty, Level & Score, Settings -->
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 4px 4px; box-sizing: border-box; gap: 4px;">
                     <!-- Back / Stages Button -->
-                    <button id="mdStagesBtn" title="قائمة المراحل" style="width: 38px; height: 38px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid #EFEBE4; color: #6D4C41; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: transform 0.1s;">
+                    <button id="mdStagesBtn" title="قائمة المراحل" style="width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid #EFEBE4; color: #6D4C41; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: transform 0.1s; flex-shrink: 0;">
                         🗺️
+                    </button>
+
+                    <!-- Difficulty Badge / Switcher -->
+                    <button id="mdDifficultyBtn" title="تغيير مستوى الصعوبة" style="background: #FFFFFF; border: 1.5px solid #81C784; border-radius: 12px; padding: 4px 8px; cursor: pointer; font-size: 11px; font-weight: 900; color: #2E7D32; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 3px; flex-shrink: 0;">
+                        <span id="mdDiffBadge">🟢 مبتدئ</span> <span style="font-size: 8px; opacity: 0.6;">▼</span>
                     </button>
 
                     <!-- Center: Level and Score -->
                     <div style="text-align: center;">
-                        <div style="font-size: 11px; color: #8D6E63; font-weight: bold; letter-spacing: 0.5px;">Level / المستوى</div>
-                        <div id="mdLevelNum" style="font-size: 24px; font-weight: 900; color: #5D4037; line-height: 1.1;">1</div>
+                        <div style="font-size: 10px; color: #8D6E63; font-weight: bold; letter-spacing: 0.5px;">Level / المستوى</div>
+                        <div id="mdLevelNum" style="font-size: 22px; font-weight: 900; color: #5D4037; line-height: 1.1;">1</div>
                     </div>
 
                     <div style="text-align: center;">
-                        <div style="font-size: 11px; color: #8D6E63; font-weight: bold; letter-spacing: 0.5px;">Score / النتيجة</div>
-                        <div id="mdScoreNum" style="font-size: 24px; font-weight: 900; color: #5D4037; line-height: 1.1;">150</div>
+                        <div style="font-size: 10px; color: #8D6E63; font-weight: bold; letter-spacing: 0.5px;">Score / النتيجة</div>
+                        <div id="mdScoreNum" style="font-size: 22px; font-weight: 900; color: #5D4037; line-height: 1.1;">150</div>
                     </div>
 
                     <!-- Reset / Undo Button -->
-                    <button id="mdResetBtn" title="إعادة المستوى" style="width: 38px; height: 38px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid #EFEBE4; color: #6D4C41; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+                    <button id="mdResetBtn" title="إعادة المستوى" style="width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid #EFEBE4; color: #6D4C41; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); flex-shrink: 0;">
                         🔄
                     </button>
                 </div>
@@ -2419,8 +2429,9 @@
                         <button id="mdUndoBtn" title="تراجع" style="background: #FFFFFF; border: 1px solid #D7CCC8; width: 34px; height: 34px; border-radius: 10px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
                             ↩️
                         </button>
-                        <button id="mdHintBtn" title="تلميح" style="background: #FFF9C4; border: 1px solid #FBC02D; width: 34px; height: 34px; border-radius: 10px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
-                            💡
+                        <button id="mdHintBtn" title="تلميح (3 تلميحات فقط)" style="position: relative; background: #FFF9C4; border: 1.5px solid #FBC02D; border-radius: 10px; font-size: 13px; font-weight: 900; color: #5D4037; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                            <span>💡</span>
+                            <span id="mdHintBadge" style="font-size: 10px; font-weight: 900; color: #D84315; background: #FFE082; padding: 1px 5px; border-radius: 8px;">3</span>
                         </button>
                     </div>
                 </div>
@@ -2453,12 +2464,12 @@
                             <button id="mdCloseStagesBtn" style="background: #EFEBE4; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: 900; cursor: pointer; color: #5D4037;">✕</button>
                         </div>
 
-                        <!-- Stages Tabs: All, Medium, Hard, Expert -->
-                        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-                            <button class="md-tab-btn active" data-tab="all" style="flex: 1; padding: 6px; border-radius: 10px; border: none; background: #F7A361; color: white; font-weight: bold; font-size: 11px; cursor: pointer;">الكل (24)</button>
-                            <button class="md-tab-btn" data-tab="medium" style="flex: 1; padding: 6px; border-radius: 10px; border: none; background: #EFEBE4; color: #5D4037; font-weight: bold; font-size: 11px; cursor: pointer;">متوسط (5-6)</button>
-                            <button class="md-tab-btn" data-tab="hard" style="flex: 1; padding: 6px; border-radius: 10px; border: none; background: #EFEBE4; color: #5D4037; font-weight: bold; font-size: 11px; cursor: pointer;">صعب (7-8)</button>
-                            <button class="md-tab-btn" data-tab="expert" style="flex: 1; padding: 6px; border-radius: 10px; border: none; background: #EFEBE4; color: #5D4037; font-weight: bold; font-size: 11px; cursor: pointer;">عبقري (9x9)</button>
+                        <!-- Stages Tabs: All, Easy, Medium, Hard -->
+                        <div style="display: flex; gap: 4px; margin-bottom: 12px;">
+                            <button class="md-tab-btn active" data-tab="all" style="flex: 1; padding: 6px 2px; border-radius: 10px; border: none; background: #F7A361; color: white; font-weight: bold; font-size: 11px; cursor: pointer;">الكل (24)</button>
+                            <button class="md-tab-btn" data-tab="easy" style="flex: 1; padding: 6px 2px; border-radius: 10px; border: none; background: #EFEBE4; color: #5D4037; font-weight: bold; font-size: 11px; cursor: pointer;">🟢 مبتدئ</button>
+                            <button class="md-tab-btn" data-tab="medium" style="flex: 1; padding: 6px 2px; border-radius: 10px; border: none; background: #EFEBE4; color: #5D4037; font-weight: bold; font-size: 11px; cursor: pointer;">🟡 متوسط</button>
+                            <button class="md-tab-btn" data-tab="hard" style="flex: 1; padding: 6px 2px; border-radius: 10px; border: none; background: #EFEBE4; color: #5D4037; font-weight: bold; font-size: 11px; cursor: pointer;">🔴 محترف</button>
                         </div>
 
                         <!-- Stages Grid Container -->
@@ -2516,6 +2527,51 @@
                     </div>
                 </div>
 
+                <!-- DIFFICULTY SELECTION MODAL -->
+                <div id="mdDifficultyModal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 120; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box; border-radius: 20px;">
+                    <div style="background: #FAF7F2; width: 100%; max-width: 360px; border-radius: 24px; padding: 22px 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: flex; flex-direction: column; text-align: center; border: 3px solid #F7A361;">
+                        <div style="font-size: 42px; margin-bottom: 6px;">🐱👑</div>
+                        <h3 style="margin: 0 0 6px; color: #5D4037; font-size: 19px; font-weight: 900;">اختر مستوى الصعوبة</h3>
+                        <p style="margin: 0 0 16px; color: #8D6E63; font-size: 12px; font-weight: bold;">اختر التحدي المناسب لمهاراتك في مياودوكو</p>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; direction: rtl;">
+                            <!-- Beginner -->
+                            <button class="md-diff-choice-btn" data-diff="easy" style="background: #FFFFFF; border: 2.5px solid #81C784; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: right; box-shadow: 0 3px 6px rgba(0,0,0,0.04); transition: transform 0.15s;">
+                                <div style="font-size: 28px;">🟢</div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 15px; font-weight: 900; color: #2E7D32;">مبتدئ (Beginner)</div>
+                                    <div style="font-size: 11px; color: #689F38;">المراحل 1 - 8 • شبكات 5×5 إلى 7×7</div>
+                                </div>
+                                <div style="font-size: 18px; color: #81C784;">⬅️</div>
+                            </button>
+
+                            <!-- Medium -->
+                            <button class="md-diff-choice-btn" data-diff="medium" style="background: #FFFFFF; border: 2.5px solid #FFB74D; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: right; box-shadow: 0 3px 6px rgba(0,0,0,0.04); transition: transform 0.15s;">
+                                <div style="font-size: 28px;">🟡</div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 15px; font-weight: 900; color: #E65100;">متوسط (Medium)</div>
+                                    <div style="font-size: 11px; color: #FB8C00;">المراحل 9 - 16 • شبكات 7×7 إلى 8×8</div>
+                                </div>
+                                <div style="font-size: 18px; color: #FFB74D;">⬅️</div>
+                            </button>
+
+                            <!-- Expert -->
+                            <button class="md-diff-choice-btn" data-diff="hard" style="background: #FFFFFF; border: 2.5px solid #EF5350; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: right; box-shadow: 0 3px 6px rgba(0,0,0,0.04); transition: transform 0.15s;">
+                                <div style="font-size: 28px;">🔴</div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 15px; font-weight: 900; color: #C62828;">محترف (Expert)</div>
+                                    <div style="font-size: 11px; color: #D32F2F;">المراحل 17 - 24 • شبكات 8×8 و 9×9</div>
+                                </div>
+                                <div style="font-size: 18px; color: #EF5350;">⬅️</div>
+                            </button>
+                        </div>
+
+                        <button id="mdCloseDiffModalBtn" style="background: #EFEBE4; border: none; border-radius: 12px; padding: 8px; color: #5D4037; font-weight: bold; font-size: 12px; cursor: pointer;">
+                            إغلاق
+                        </button>
+                    </div>
+                </div>
+
             </div>
         `;
 
@@ -2531,6 +2587,11 @@
         const undoBtn = document.getElementById('mdUndoBtn');
         const resetBtn = document.getElementById('mdResetBtn');
         const hintBtn = document.getElementById('mdHintBtn');
+        const hintBadgeEl = document.getElementById('mdHintBadge');
+        const diffBadgeEl = document.getElementById('mdDiffBadge');
+        const difficultyBtn = document.getElementById('mdDifficultyBtn');
+        const difficultyModal = document.getElementById('mdDifficultyModal');
+        const closeDiffModalBtn = document.getElementById('mdCloseDiffModalBtn');
         const stagesBtn = document.getElementById('mdStagesBtn');
         const stagesModal = document.getElementById('mdStagesModal');
         const closeStagesBtn = document.getElementById('mdCloseStagesBtn');
@@ -2541,6 +2602,39 @@
         const winReplayBtn = document.getElementById('mdWinReplayBtn');
         const failRetryBtn = document.getElementById('mdFailRetryBtn');
         const failContinueBtn = document.getElementById('mdFailContinueBtn');
+
+        // Difficulty UI updater
+        function updateDifficultyUI() {
+            if (!diffBadgeEl) return;
+            if (currentDifficulty === 'hard') {
+                diffBadgeEl.textContent = '🔴 محترف';
+                difficultyBtn.style.borderColor = '#EF5350';
+                diffBadgeEl.style.color = '#C62828';
+            } else if (currentDifficulty === 'medium') {
+                diffBadgeEl.textContent = '🟡 متوسط';
+                difficultyBtn.style.borderColor = '#FFA726';
+                diffBadgeEl.style.color = '#E65100';
+            } else {
+                diffBadgeEl.textContent = '🟢 مبتدئ';
+                difficultyBtn.style.borderColor = '#81C784';
+                diffBadgeEl.style.color = '#2E7D32';
+            }
+        }
+
+        // Hints UI updater
+        function updateHintsUI() {
+            if (!hintBadgeEl) return;
+            hintBadgeEl.textContent = hintsLeft;
+            if (hintsLeft <= 0) {
+                hintBtn.style.opacity = '0.5';
+                hintBtn.style.cursor = 'not-allowed';
+                hintBtn.title = 'نفدت التلميحات (0 متبقي)';
+            } else {
+                hintBtn.style.opacity = '1';
+                hintBtn.style.cursor = 'pointer';
+                hintBtn.title = `تلميح (${hintsLeft} متبقي)`;
+            }
+        }
 
         // Timer
         function startTimer() {
@@ -2620,6 +2714,11 @@
             const lvl = LEVELS_DATA[currentLevelIndex];
             const N = lvl.size;
 
+            currentDifficulty = lvl.difficulty || currentDifficulty;
+            localStorage.setItem('meowdoku_difficulty', currentDifficulty);
+            updateDifficultyUI();
+            updateHintsUI();
+
             levelNumEl.textContent = lvl.id;
             scoreNumEl.textContent = score;
 
@@ -2688,6 +2787,7 @@
         function applyDragToCell(r, c) {
             if (r < 0 || r >= currentN || c < 0 || c >= currentN) return;
             const val = board[r][c];
+            if (val === 2) return; // Discovered cats cannot be modified or cleared!
 
             if (dragAction === 'cross') {
                 if (val === 0) {
@@ -2747,16 +2847,14 @@
                 lastTapTime = 0;
                 dragAction = 'none';
 
-                saveHistory();
                 const currentVal = board[r][c];
 
                 if (currentVal === 2) {
-                    // Cat -> remove it
-                    board[r][c] = 0;
-                    playPurr();
-                    updateCellDOM(r, c);
-                    updateCatTrackUI();
+                    // Discovered cats are locked and cannot be removed!
+                    playPurrThrottled();
+                    return;
                 } else {
+                    saveHistory();
                     // Place Cat or Red Cross!
                     const isCorrect = (lvl.solution[r] === c);
                     if (isCorrect) {
@@ -2794,7 +2892,12 @@
             lastTapTime = now;
 
             const currentVal = board[r][c];
-            if (currentVal === 0) {
+            if (currentVal === 2) {
+                // Discovered cats are locked and cannot be removed!
+                dragAction = 'none';
+                playPurrThrottled();
+                return;
+            } else if (currentVal === 0) {
                 dragAction = 'cross';
                 saveHistory();
                 board[r][c] = 1;
@@ -2806,14 +2909,6 @@
                 board[r][c] = 0;
                 updateCellDOM(r, c);
                 playPurrThrottled();
-            } else if (currentVal === 2) {
-                // Tapping a cat clears it
-                dragAction = 'none';
-                saveHistory();
-                board[r][c] = 0;
-                updateCellDOM(r, c);
-                playPurr();
-                updateCatTrackUI();
             }
         }
 
@@ -3107,9 +3202,16 @@
         });
 
         hintBtn.addEventListener('click', () => {
+            if (!gameActive) return;
+
+            if (hintsLeft <= 0) {
+                playErrorSound();
+                alert('💡 نفدت التلميحات المتاحة لك (تم استخدام 3 تلميحات بالكامل)!');
+                return;
+            }
+
             const lvl = LEVELS_DATA[currentLevelIndex];
             const N = lvl.size;
-            playMeow();
 
             let wrongCell = null;
             for (let r = 0; r < N; r++) {
@@ -3123,18 +3225,26 @@
             }
 
             if (wrongCell) {
-                alert(`💡 تلميح: انتبه للعلامة الخاطئة في الصف ${wrongCell.r + 1} والعمود ${wrongCell.c + 1}!`);
+                hintsLeft--;
+                localStorage.setItem('meowdoku_hints', hintsLeft.toString());
+                updateHintsUI();
+                playMeow();
+                alert(`💡 تلميح: انتبه للعلامة الخاطئة في الصف ${wrongCell.r + 1} والعمود ${wrongCell.c + 1}! (متبقي ${hintsLeft} تلميح)`);
                 return;
             }
 
             for (let r = 0; r < N; r++) {
                 const targetC = lvl.solution[r];
                 if (board[r][targetC] !== 2) {
+                    hintsLeft--;
+                    localStorage.setItem('meowdoku_hints', hintsLeft.toString());
+                    updateHintsUI();
                     saveHistory();
                     board[r][targetC] = 2;
+                    playMeow();
                     renderBoard();
                     checkVictoryCondition();
-                    alert(`💡 تلميح: تم وضع قطة مؤكدة في الصف ${r + 1} والعمود ${targetC + 1}!`);
+                    alert(`💡 تلميح: تم وضع قطة مؤكدة في الصف ${r + 1} والعمود ${targetC + 1}! (متبقي ${hintsLeft} تلميح)`);
                     return;
                 }
             }
@@ -3150,7 +3260,7 @@
 
                 const lvlCard = document.createElement('div');
                 const lvlProg = progress[lvl.id] || {};
-                const isUnlocked = lvl.id === 1 || lvlProg.stars > 0 || lvlProg.unlocked;
+                const isUnlocked = lvl.id === 1 || lvl.id === 9 || lvl.id === 17 || lvlProg.stars > 0 || lvlProg.unlocked;
 
                 lvlCard.style.cssText = `
                     background: ${isUnlocked ? (idx === currentLevelIndex ? '#FFF3E0' : '#FFFFFF') : '#EFEBE4'};
@@ -3196,6 +3306,37 @@
 
         closeStagesBtn.addEventListener('click', () => {
             stagesModal.style.display = 'none';
+        });
+
+        // Difficulty Modal Listeners
+        difficultyBtn.addEventListener('click', () => {
+            playPurr();
+            difficultyModal.style.display = 'flex';
+        });
+
+        closeDiffModalBtn.addEventListener('click', () => {
+            difficultyModal.style.display = 'none';
+        });
+
+        document.querySelectorAll('.md-diff-choice-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const diff = btn.dataset.diff;
+                playMeow();
+                currentDifficulty = diff;
+                localStorage.setItem('meowdoku_difficulty', diff);
+                sessionStorage.setItem('meowdoku_diff_chosen', 'true');
+                updateDifficultyUI();
+                difficultyModal.style.display = 'none';
+
+                // Switch to the first level of chosen difficulty if not already in it
+                const curLvl = LEVELS_DATA[currentLevelIndex];
+                if (curLvl.difficulty !== diff) {
+                    let targetIdx = 0;
+                    if (diff === 'medium') targetIdx = 8;
+                    else if (diff === 'hard') targetIdx = 16;
+                    loadLevel(targetIdx);
+                }
+            });
         });
 
         document.querySelectorAll('.md-tab-btn').forEach(btn => {
@@ -3260,5 +3401,10 @@
         container.addEventListener('game-exit', cleanup);
 
         loadLevel(currentLevelIndex);
+
+        // Show difficulty selection modal when entering the game if not already chosen in this session
+        if (!sessionStorage.getItem('meowdoku_diff_chosen')) {
+            difficultyModal.style.display = 'flex';
+        }
     };
 })();
