@@ -1,11 +1,38 @@
 // Game: Bug Hunter (صائد الحشرات)
 // Fast-paced 2.5D Isometric Bug Defense & Upgrade Shooter
+// Fullscreen Mobile Phone Experience with Smooth Walking Controls
 (function() {
     window.initBugHunterGame = function(container) {
+        // Enforce mobile-sized full screen layout (do NOT use wide-mode)
         const appContainer = document.querySelector('.app-container');
         if (appContainer) {
-            appContainer.classList.add('wide-mode');
+            appContainer.classList.remove('wide-mode');
         }
+
+        // Apply bug-hunter-mode to gameArea for complete mobile phone viewport
+        const originalPadding = container.style.padding;
+        const originalBorder = container.style.border;
+        const originalBg = container.style.backgroundColor;
+        const originalRadius = container.style.borderRadius;
+        const originalHeight = container.style.height;
+        const originalBoxShadow = container.style.boxShadow;
+        const originalMargin = container.style.margin;
+        const originalMaxWidth = container.style.maxWidth;
+
+        container.classList.add('bug-hunter-mode');
+        container.style.padding = '0';
+        container.style.border = 'none';
+        container.style.backgroundColor = '#090514';
+        container.style.borderRadius = '24px';
+        container.style.height = 'calc(100vh - 20px)';
+        container.style.minHeight = '620px';
+        container.style.maxHeight = '900px';
+        container.style.maxWidth = '480px';
+        container.style.margin = '0 auto';
+        container.style.boxShadow = '0 14px 45px rgba(0,0,0,0.6)';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.overflow = 'hidden';
 
         // Web Audio Synthesizer for rich arcade sound effects
         let audioCtx = null;
@@ -32,12 +59,12 @@
                     osc.connect(gain);
                     gain.connect(ctx.destination);
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(850, now);
-                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.09);
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(160, now + 0.08);
                     gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
                     osc.start(now);
-                    osc.stop(now + 0.1);
+                    osc.stop(now + 0.09);
                 } else if (type === 'plasma') {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
@@ -68,9 +95,9 @@
                     osc.connect(gain);
                     gain.connect(ctx.destination);
                     osc.type = 'square';
-                    osc.frequency.setValueAtTime(190, now);
-                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.14);
-                    gain.gain.setValueAtTime(0.25, now);
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(45, now + 0.14);
+                    gain.gain.setValueAtTime(0.22, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
                     osc.start(now);
                     osc.stop(now + 0.15);
@@ -87,7 +114,7 @@
                     osc.start(now);
                     osc.stop(now + 0.23);
                 } else if (type === 'upgrade') {
-                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
                     notes.forEach((freq, idx) => {
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
@@ -106,12 +133,12 @@
                     osc.connect(gain);
                     gain.connect(ctx.destination);
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(160, now);
-                    osc.frequency.exponentialRampToValueAtTime(60, now + 0.18);
+                    osc.frequency.setValueAtTime(170, now);
+                    osc.frequency.exponentialRampToValueAtTime(60, now + 0.16);
                     gain.gain.setValueAtTime(0.35, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
                     osc.start(now);
-                    osc.stop(now + 0.19);
+                    osc.stop(now + 0.17);
                 } else if (type === 'wave_clear') {
                     const chord = [440, 554.37, 659.25, 880];
                     chord.forEach(freq => {
@@ -130,13 +157,13 @@
             } catch(e) {}
         }
 
-        // HTML Layout matching the exact screenshot (dark top bar, 2.5D arena canvas, controls, shop modal)
+        // HTML Layout matching the exact screenshot (dark top bar, full 2.5D arena canvas, controls, shop modal)
         const html = `
-            <div class="bug-hunter-wrapper" style="width: 100%; max-width: 520px; margin: 0 auto; user-select: none; -webkit-user-select: none; font-family: var(--font-kids), 'Tajawal', sans-serif; direction: ltr; position: relative; overflow: hidden; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); background: #0F0A1C;">
+            <div class="bug-hunter-wrapper" style="width: 100%; height: 100%; flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; position: relative; user-select: none; -webkit-user-select: none; font-family: var(--font-kids), 'Tajawal', sans-serif; direction: ltr; overflow: hidden; background: #0F0A1C;">
                 
-                <!-- TOP HEADER HUD (Exact match to screenshot) -->
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; height: 50px; background: #090514; padding: 0 16px; box-sizing: border-box; border-bottom: 2px solid #23163E; z-index: 10;">
-                    <!-- Health on Left -->
+                <!-- TOP HEADER HUD (Exact match to screenshot with home button clearance) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; height: 52px; flex-shrink: 0; background: #090514; padding: 0 16px 0 65px; box-sizing: border-box; border-bottom: 2px solid #23163E; z-index: 10;">
+                    <!-- Health on Left (next to back button) -->
                     <div style="display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 900; color: #FFFFFF;">
                         <span id="bhHealthText">100 / 100</span>
                         <span style="color: #FF3366; font-size: 17px; filter: drop-shadow(0 0 5px rgba(255,51,102,0.6));">❤️</span>
@@ -154,8 +181,8 @@
                     </div>
                 </div>
 
-                <!-- MAIN 2.5D CANVAS CONTAINER -->
-                <div id="bhCanvasContainer" style="position: relative; width: 100%; aspect-ratio: 9/15; background: #180D30; overflow: hidden; touch-action: none;">
+                <!-- MAIN 2.5D CANVAS CONTAINER (Fills all available mobile height) -->
+                <div id="bhCanvasContainer" style="flex: 1 1 0; min-height: 0; width: 100%; position: relative; background: #180D30; overflow: hidden; touch-action: none; cursor: crosshair;">
                     <canvas id="bhCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
 
                     <!-- Floating Action Buttons on Canvas -->
@@ -171,16 +198,16 @@
                         <div id="bhWaveBannerSub" style="font-size: 13px; font-weight: bold; color: #C084FC;">اقضِ على الحشرات واجمع الكوينز!</div>
                     </div>
 
-                    <!-- Virtual Joystick Area (Touch devices) -->
-                    <div id="bhJoystickContainer" style="position: absolute; bottom: 30px; left: 30px; width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2); pointer-events: none; display: none; z-index: 12;">
-                        <div id="bhJoystickThumb" style="position: absolute; top: 35px; left: 35px; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, #FBBF24, #D97706); box-shadow: 0 2px 10px rgba(0,0,0,0.5);"></div>
+                    <!-- Virtual Joystick Area (Always visible at bottom left for touch & mouse drag) -->
+                    <div id="bhJoystickContainer" style="position: absolute; bottom: 25px; left: 25px; width: 105px; height: 105px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 2.5px dashed rgba(255,255,255,0.3); pointer-events: none; z-index: 12; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+                        <div id="bhJoystickThumb" style="width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle, #FBBF24, #D97706); border: 2.5px solid #FFFFFF; box-shadow: 0 3px 12px rgba(217,119,6,0.6); transform: translate(0px, 0px); transition: transform 0.04s ease-out;"></div>
                     </div>
                 </div>
 
                 <!-- CONTROLS HINT BANNER -->
-                <div style="background: #090514; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; color: #94A3B8; font-size: 11.5px; font-weight: bold; border-top: 1.5px solid #23163E;">
-                    <div>🎮 تحكم بالأسهم / WASD أو اللمس والسحب</div>
-                    <div style="color: #FCD34D;">⚡ إطلاق النار تلقائي على أقرب حشرة</div>
+                <div style="background: #090514; height: 32px; flex-shrink: 0; padding: 0 14px; display: flex; justify-content: space-between; align-items: center; color: #94A3B8; font-size: 11px; font-weight: bold; border-top: 1.5px solid #23163E;">
+                    <div>🕹️ اسحب أو انقر للتحرك (أو الأسهم / WASD)</div>
+                    <div style="color: #FCD34D;">⚡ إطلاق تلقائي</div>
                 </div>
 
                 <!-- UPGRADE SHOP MODAL -->
@@ -266,8 +293,8 @@
         const joystickContainer = document.getElementById('bhJoystickContainer');
         const joystickThumb = document.getElementById('bhJoystickThumb');
 
-        // Arena Dimensions (Virtual Arena Space 500 x 800)
-        const ARENA_W = 500;
+        // Arena Dimensions (Virtual Arena Space 480 x 800)
+        const ARENA_W = 480;
         const ARENA_H = 800;
         const WALL_THICKNESS = 24;
 
@@ -275,18 +302,18 @@
         const OBSTACLES = [
             { x: 50,  y: 280, w: 135, h: 56 }, // Left top table
             { x: 310, y: 390, w: 145, h: 56 }, // Right mid table
-            { x: 400, y: 190, w: 75,  h: 70 }, // Right top block
+            { x: 390, y: 190, w: 75,  h: 70 }, // Right top block
             { x: 0,   y: 520, w: 50,  h: 80 }, // Left edge block
-            { x: 180, y: 630, w: 135, h: 52 }  // Bottom mid table
+            { x: 180, y: 640, w: 135, h: 52 }  // Bottom mid table
         ];
 
         // Weapon Tiers
         const WEAPON_TIERS = [
-            { name: 'مسدس فردي', bullets: 1, damage: 25, speed: 650, spread: 0, color: '#FFFFFF', radius: 4 },
-            { name: 'مسدس مزدوج', bullets: 2, damage: 32, speed: 700, spread: 14, color: '#38BDF8', radius: 4.5 },
-            { name: 'إطلاق ثلاثي متفرق', bullets: 3, damage: 40, speed: 750, spread: 0.22, color: '#A855F7', radius: 5 },
-            { name: 'بندقية البلازما المتفجرة', bullets: 3, damage: 60, speed: 820, spread: 0.18, explosive: true, color: '#F43F5E', radius: 6.5 },
-            { name: 'مدفع الهايبر نوفا الفتاك', bullets: 5, damage: 85, speed: 900, spread: 0.35, explosive: true, color: '#FBBF24', radius: 7 }
+            { name: 'مسدس فردي', bullets: 1, damage: 28, speed: 680, spread: 0, color: '#FFFFFF', radius: 4 },
+            { name: 'مسدس مزدوج', bullets: 2, damage: 34, speed: 720, spread: 0.16, color: '#38BDF8', radius: 4.5 },
+            { name: 'إطلاق ثلاثي متفرق', bullets: 3, damage: 42, speed: 760, spread: 0.24, color: '#A855F7', radius: 5 },
+            { name: 'بندقية البلازما المتفجرة', bullets: 3, damage: 65, speed: 820, spread: 0.20, explosive: true, color: '#F43F5E', radius: 6.5 },
+            { name: 'مدفع الهايبر نوفا الفتاك', bullets: 5, damage: 90, speed: 900, spread: 0.35, explosive: true, color: '#FBBF24', radius: 7 }
         ];
 
         // Upgrades State
@@ -298,21 +325,21 @@
             magnetLevel: 1
         };
 
-        // Player State
+        // Player State (Spawn in clear open space at x: 170, y: 550)
         let player = {
-            x: ARENA_W / 2 - 30,
-            y: ARENA_H - 180,
+            x: 170,
+            y: 550,
             radius: 18,
-            vx: 0,
-            vy: 0,
             angle: -Math.PI / 2,
+            facingAngle: -Math.PI / 2,
             hp: 100,
             maxHp: 100,
-            speed: 210,
+            speed: 235,
             fireCooldown: 0,
-            fireRate: 3.0, // Shots per second
-            magnetRadius: 75,
-            walkCycle: 0
+            fireRate: 3.0,
+            magnetRadius: 85,
+            walkCycle: 0,
+            isMoving: false
         };
 
         // Game Entities
@@ -336,103 +363,127 @@
         let animId = null;
         let lastTime = performance.now();
 
-        // Input Management
+        // Input Management (Keys + Unified Pointer)
         const keys = {};
-        let touchActive = false;
-        let touchOrigin = { x: 0, y: 0 };
-        let touchCurrent = { x: 0, y: 0 };
-        let joystickVector = { x: 0, y: 0 };
+        let isPointerDown = false;
+        let pointerId = null;
+        let pointerStart = { x: 0, y: 0 };
+        let pointerCurrent = { x: 0, y: 0 };
+        let moveVector = { x: 0, y: 0 };
+        let clickTarget = null;
 
         // Handle Canvas Sizing
         function resizeCanvas() {
             const rect = canvasContainer.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) return;
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.resetTransform();
-            ctx.scale(canvas.width / ARENA_W, canvas.height / ARENA_H);
+            canvas.width = Math.round(rect.width * dpr);
+            canvas.height = Math.round(rect.height * dpr);
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Keyboard Controls
-        window.addEventListener('keydown', e => {
-            keys[e.key.toLowerCase()] = true;
-            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        // Keyboard Controls (Supports English WASD, Arrow keys, and Arabic keyboard layout)
+        function onKeyDown(e) {
+            const k = e.key.toLowerCase();
+            keys[k] = true;
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault();
             }
-        });
-        window.addEventListener('keyup', e => {
-            keys[e.key.toLowerCase()] = false;
-        });
+        }
+        function onKeyUp(e) {
+            const k = e.key.toLowerCase();
+            keys[k] = false;
+        }
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
 
-        // Touch & Virtual Joystick Controls
-        function onTouchStart(e) {
+        // Unified Pointer Controls (Touch screen, Mouse drag, and Tap-to-walk)
+        function onPointerDown(e) {
             if (isShopOpen || !gameActive) return;
-            const touch = e.touches[0];
+            if (e.target.closest('#bhOpenShopBtn') || e.target.closest('.modal')) return;
+
             const rect = canvasContainer.getBoundingClientRect();
-            const clientX = touch.clientX - rect.left;
-            const clientY = touch.clientY - rect.top;
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
 
-            touchActive = true;
-            touchOrigin = { x: clientX, y: clientY };
-            touchCurrent = { x: clientX, y: clientY };
-            joystickVector = { x: 0, y: 0 };
+            isPointerDown = true;
+            pointerId = e.pointerId;
+            try {
+                canvasContainer.setPointerCapture(e.pointerId);
+            } catch(err) {}
 
-            joystickContainer.style.display = 'block';
-            joystickContainer.style.left = `${clientX - 55}px`;
-            joystickContainer.style.top = `${clientY - 55}px`;
-            joystickThumb.style.transform = `translate(0px, 0px)`;
+            pointerStart = { x: px, y: py };
+            pointerCurrent = { x: px, y: py };
+            moveVector = { x: 0, y: 0 };
+
+            // Dynamic joystick position near touch point (or bottom left)
+            const joyX = Math.max(55, Math.min(rect.width - 55, px));
+            const joyY = Math.max(55, Math.min(rect.height - 55, py));
+            joystickContainer.style.left = `${joyX - 52}px`;
+            joystickContainer.style.top = `${joyY - 52}px`;
+            joystickContainer.style.bottom = 'auto';
+            joystickThumb.style.transform = 'translate(0px, 0px)';
+
+            // Set tap target in Arena coordinates (tap to walk)
+            const arenaX = (px / rect.width) * ARENA_W;
+            const arenaY = (py / rect.height) * ARENA_H;
+            clickTarget = { x: arenaX, y: arenaY };
         }
 
-        function onTouchMove(e) {
-            if (!touchActive) return;
-            e.preventDefault();
-            const touch = e.touches[0];
+        function onPointerMove(e) {
+            if (!isPointerDown || e.pointerId !== pointerId) return;
             const rect = canvasContainer.getBoundingClientRect();
-            const clientX = touch.clientX - rect.left;
-            const clientY = touch.clientY - rect.top;
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
 
-            touchCurrent = { x: clientX, y: clientY };
-            const dx = touchCurrent.x - touchOrigin.x;
-            const dy = touchCurrent.y - touchOrigin.y;
+            pointerCurrent = { x: px, y: py };
+            const dx = pointerCurrent.x - pointerStart.x;
+            const dy = pointerCurrent.y - pointerStart.y;
             const dist = Math.hypot(dx, dy);
-            const maxRadius = 45;
+            const maxRadius = 42;
 
-            if (dist > 0) {
+            if (dist > 6) {
+                // Dragging detected -> cancel tap-to-move point and use directional drag
+                clickTarget = null;
                 const clampedDist = Math.min(dist, maxRadius);
-                joystickVector.x = (dx / dist) * (clampedDist / maxRadius);
-                joystickVector.y = (dy / dist) * (clampedDist / maxRadius);
-                joystickThumb.style.transform = `translate(${joystickVector.x * maxRadius}px, ${joystickVector.y * maxRadius}px)`;
+                moveVector.x = (dx / dist) * (clampedDist / maxRadius);
+                moveVector.y = (dy / dist) * (clampedDist / maxRadius);
+                joystickThumb.style.transform = `translate(${moveVector.x * maxRadius}px, ${moveVector.y * maxRadius}px)`;
+            } else {
+                moveVector = { x: 0, y: 0 };
+                joystickThumb.style.transform = 'translate(0px, 0px)';
             }
         }
 
-        function onTouchEnd() {
-            touchActive = false;
-            joystickVector = { x: 0, y: 0 };
-            joystickContainer.style.display = 'none';
+        function onPointerUp(e) {
+            if (e.pointerId !== pointerId) return;
+            isPointerDown = false;
+            pointerId = null;
+            moveVector = { x: 0, y: 0 };
+            joystickThumb.style.transform = 'translate(0px, 0px)';
+
+            // Reset joystick to default bottom-left corner
+            joystickContainer.style.left = '25px';
+            joystickContainer.style.top = 'auto';
+            joystickContainer.style.bottom = '25px';
         }
 
-        canvasContainer.addEventListener('touchstart', onTouchStart, { passive: false });
-        window.addEventListener('touchmove', onTouchMove, { passive: false });
-        window.addEventListener('touchend', onTouchEnd, { passive: false });
-        window.addEventListener('touchcancel', onTouchEnd, { passive: false });
+        canvasContainer.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
 
         // Update Upgrades & Player Stats
         function recalculateStats() {
-            // Player Speed: 210 -> +25 per level
-            player.speed = 210 + (upgrades.speedLevel - 1) * 28;
-            // Fire Rate: 3.0 -> +0.7 per level
-            player.fireRate = 3.0 + (upgrades.fireRateLevel - 1) * 0.75;
-            // Max HP: 100 -> +30 per level
+            player.speed = 235 + (upgrades.speedLevel - 1) * 32;
+            player.fireRate = 3.0 + (upgrades.fireRateLevel - 1) * 0.8;
             const oldMax = player.maxHp;
             player.maxHp = 100 + (upgrades.maxHpLevel - 1) * 35;
             if (player.maxHp > oldMax) {
                 player.hp = Math.min(player.maxHp, player.hp + (player.maxHp - oldMax));
             }
-            // Magnet: 75 -> +35 per level
-            player.magnetRadius = 75 + (upgrades.magnetLevel - 1) * 45;
-
+            player.magnetRadius = 85 + (upgrades.magnetLevel - 1) * 45;
             updateHUD();
         }
 
@@ -452,52 +503,34 @@
                     x, y,
                     vx: Math.cos(angle) * spd,
                     vy: Math.sin(angle) * spd,
-                    radius: 2 + Math.random() * 3.5,
+                    radius: 2 + Math.random() * 2.5,
                     color,
                     alpha: 1,
-                    life: 0.35 + Math.random() * 0.25
+                    decay: 1.5 + Math.random() * 2.5
                 });
             }
         }
 
-        function spawnFloatingText(x, y, text, color = '#FCD34D') {
+        function spawnFloatingText(x, y, text, color = '#FFFFFF', size = 15) {
             floatTexts.push({
-                x, y,
-                text,
-                color,
+                x, y, text, color, size,
                 alpha: 1,
-                vy: -35,
-                life: 0.65
+                vy: -35
             });
         }
 
-        // Drop Gold Coin
-        function spawnCoin(x, y, val = 1) {
-            const angle = Math.random() * Math.PI * 2;
-            const spd = 40 + Math.random() * 50;
-            coins.push({
-                x, y,
-                vx: Math.cos(angle) * spd,
-                vy: Math.sin(angle) * spd,
-                val,
-                bounce: 1,
-                radius: 10,
-                rotation: Math.random() * Math.PI,
-                life: 18.0
-            });
-        }
-
-        // Waves Generator
+        // Waves Generation System
         function prepareWave(wave) {
-            bugsToSpawn = [];
             currentWave = wave;
             updateHUD();
 
-            // Calculate wave composition
-            const baseCount = 8 + wave * 4;
-            const hasBoss = (wave % 5 === 0);
+            bugsToSpawn = [];
+            bugs = [];
+            enemyBullets = [];
 
-            // Bug Distribution
+            const baseCount = 5 + wave * 3;
+            const hasBoss = wave % 5 === 0;
+
             for (let i = 0; i < baseCount; i++) {
                 const rand = Math.random();
                 if (wave >= 3 && rand < 0.25) {
@@ -513,14 +546,12 @@
                 bugsToSpawn.push('boss');
             }
 
-            // Shuffle spawn queue
             bugsToSpawn.sort(() => Math.random() - 0.5);
 
             waveSpawnTimer = 0.5;
             waveActive = true;
             waveTransition = false;
 
-            // Show Wave Banner
             waveBannerTitle.textContent = hasBoss ? `🚨 زعيم الموجة ${wave}!` : `🔥 الموجة ${wave}`;
             waveBannerSub.textContent = hasBoss ? 'حشرة آلية عملاقة تقترب! احذر من ضرباتها!' : `اقضِ على ${bugsToSpawn.length} حشرة واجمع الكوينز!`;
             waveBanner.style.display = 'block';
@@ -530,7 +561,6 @@
         }
 
         function spawnBug(type) {
-            // Spawn location around perimeter walls
             let x, y;
             const side = Math.floor(Math.random() * 4);
             if (side === 0) { // Top
@@ -551,11 +581,11 @@
                 bugs.push({
                     type: 'boss',
                     x: ARENA_W / 2,
-                    y: 70,
+                    y: 75,
                     radius: 36,
                     hp: 550 + currentWave * 180,
                     maxHp: 550 + currentWave * 180,
-                    speed: 68 + currentWave * 2,
+                    speed: 70 + currentWave * 2,
                     damage: 30,
                     attackTimer: 2.0,
                     color: '#6B21A8',
@@ -570,7 +600,7 @@
                     radius: 24,
                     hp: 110 + currentWave * 30,
                     maxHp: 110 + currentWave * 30,
-                    speed: 65 + currentWave * 3,
+                    speed: 68 + currentWave * 3,
                     damage: 18,
                     attackTimer: 0,
                     color: '#4C1D95',
@@ -585,7 +615,7 @@
                     radius: 17,
                     hp: 50 + currentWave * 14,
                     maxHp: 50 + currentWave * 14,
-                    speed: 85 + currentWave * 3,
+                    speed: 88 + currentWave * 3,
                     damage: 12,
                     attackTimer: 1.5 + Math.random() * 1.5,
                     color: '#10B981',
@@ -594,14 +624,14 @@
                     walkCycle: 0
                 });
             } else {
-                // Regular Spider / Beetle
+                // Regular Spider / Beetle (Exact matching colors from screenshot)
                 bugs.push({
                     type: 'spider',
                     x, y,
                     radius: 16,
                     hp: 35 + currentWave * 10,
                     maxHp: 35 + currentWave * 10,
-                    speed: 105 + currentWave * 5,
+                    speed: 110 + currentWave * 5,
                     damage: 10,
                     attackTimer: 0,
                     color: '#9333EA',
@@ -612,12 +642,26 @@
             }
         }
 
-        // Collision Helper for Box / Circle
+        // Robust Circle-Box Collision Helper (Prevents snagging, allows smooth sliding)
         function checkCircleBoxCollision(cx, cy, cr, box) {
             const nearestX = Math.max(box.x, Math.min(cx, box.x + box.w));
             const nearestY = Math.max(box.y, Math.min(cy, box.y + box.h));
-            const dx = cx - nearestX;
-            const dy = cy - nearestY;
+            let dx = cx - nearestX;
+            let dy = cy - nearestY;
+
+            // If circle center is strictly inside the box
+            if (dx === 0 && dy === 0) {
+                const pushLeft = cx - box.x;
+                const pushRight = (box.x + box.w) - cx;
+                const pushTop = cy - box.y;
+                const pushBottom = (box.y + box.h) - cy;
+                const min = Math.min(pushLeft, pushRight, pushTop, pushBottom);
+                if (min === pushLeft) return { collided: true, resolveX: -(pushLeft + cr), resolveY: 0 };
+                if (min === pushRight) return { collided: true, resolveX: pushRight + cr, resolveY: 0 };
+                if (min === pushTop) return { collided: true, resolveX: 0, resolveY: -(pushTop + cr) };
+                return { collided: true, resolveX: 0, resolveY: pushBottom + cr };
+            }
+
             const distSq = dx * dx + dy * dy;
             if (distSq < cr * cr) {
                 const dist = Math.sqrt(distSq) || 0.001;
@@ -628,7 +672,7 @@
                     resolveY: (dy / dist) * overlap
                 };
             }
-            return { collided: false };
+            return { collided: false, resolveX: 0, resolveY: 0 };
         }
 
         // Fire Bullet
@@ -673,7 +717,7 @@
                 });
             }
 
-            // Gun Recoil muzzle flash particles
+            // Muzzle flash particles
             const mx = player.x + Math.cos(targetAngle) * (player.radius + 8);
             const my = player.y + Math.sin(targetAngle) * (player.radius + 8);
             spawnParticles(mx, my, tier.color, 4, 110);
@@ -699,7 +743,6 @@
                     playSound('hit');
                 } else if (bug.type === 'boss') {
                     bug.attackTimer = 2.8;
-                    // Fire 8-directional projectile ring
                     for (let a = 0; a < 8; a++) {
                         const angle = (a * Math.PI) / 4;
                         enemyBullets.push({
@@ -722,42 +765,86 @@
         function update(dt) {
             if (!gameActive || isShopOpen) return;
 
-            // --- 1. Player Input & Movement ---
+            // --- 1. Player Input & Smooth Walking Movement ---
             let moveX = 0;
             let moveY = 0;
 
-            if (keys['w'] || keys['arrowup']) moveY -= 1;
-            if (keys['s'] || keys['arrowdown']) moveY += 1;
-            if (keys['a'] || keys['arrowleft']) moveX -= 1;
-            if (keys['d'] || keys['arrowright']) moveX += 1;
+            // Keyboard keys (English + Arabic layouts)
+            if (keys['w'] || keys['arrowup'] || keys['ص'] || keys['ض']) moveY -= 1;
+            if (keys['s'] || keys['arrowdown'] || keys['س']) moveY += 1;
+            if (keys['a'] || keys['arrowleft'] || keys['ش'] || keys['ف']) moveX -= 1;
+            if (keys['d'] || keys['arrowright'] || keys['ي'] || keys['ق']) moveX += 1;
 
-            if (touchActive && (joystickVector.x !== 0 || joystickVector.y !== 0)) {
-                moveX = joystickVector.x;
-                moveY = joystickVector.y;
+            // Drag / Virtual Joystick
+            if (moveVector.x !== 0 || moveVector.y !== 0) {
+                moveX = moveVector.x;
+                moveY = moveVector.y;
+                clickTarget = null;
+            }
+
+            // Tap-to-walk target
+            if (clickTarget && moveX === 0 && moveY === 0) {
+                const tdx = clickTarget.x - player.x;
+                const tdy = clickTarget.y - player.y;
+                const tdist = Math.hypot(tdx, tdy);
+                if (tdist > 8) {
+                    moveX = tdx / tdist;
+                    moveY = tdy / tdist;
+                } else {
+                    clickTarget = null;
+                }
             }
 
             const len = Math.hypot(moveX, moveY);
-            if (len > 0) {
+            player.isMoving = len > 0.05;
+
+            if (player.isMoving) {
                 const normX = moveX / Math.max(1, len);
                 const normY = moveY / Math.max(1, len);
+
+                // Axis-separated movement & collision for effortless sliding
                 player.x += normX * player.speed * dt;
+                player.x = Math.max(WALL_THICKNESS + player.radius, Math.min(ARENA_W - WALL_THICKNESS - player.radius, player.x));
+                OBSTACLES.forEach(box => {
+                    const col = checkCircleBoxCollision(player.x, player.y, player.radius, box);
+                    if (col.collided) {
+                        player.x += col.resolveX;
+                    }
+                });
+
                 player.y += normY * player.speed * dt;
-                player.angle = Math.atan2(normY, normX);
+                player.y = Math.max(WALL_THICKNESS + player.radius, Math.min(ARENA_H - WALL_THICKNESS - player.radius, player.y));
+                OBSTACLES.forEach(box => {
+                    const col = checkCircleBoxCollision(player.x, player.y, player.radius, box);
+                    if (col.collided) {
+                        player.y += col.resolveY;
+                    }
+                });
+
+                player.facingAngle = Math.atan2(normY, normX);
                 player.walkCycle += dt * 14;
+
+                // Dust particles while walking
+                if (Math.random() < 0.22) {
+                    particles.push({
+                        x: player.x - Math.cos(player.facingAngle) * 12 + (Math.random() - 0.5) * 8,
+                        y: player.y + 12 + (Math.random() - 0.5) * 4,
+                        vx: (Math.random() - 0.5) * 20,
+                        vy: -15 - Math.random() * 20,
+                        radius: 2,
+                        color: 'rgba(255,255,255,0.4)',
+                        alpha: 0.6,
+                        decay: 2.5
+                    });
+                }
+            } else {
+                player.walkCycle += dt * 2.5; // Idle breathing
             }
 
-            // Boundary collision
-            player.x = Math.max(WALL_THICKNESS + player.radius, Math.min(ARENA_W - WALL_THICKNESS - player.radius, player.x));
-            player.y = Math.max(WALL_THICKNESS + player.radius, Math.min(ARENA_H - WALL_THICKNESS - player.radius, player.y));
-
-            // Obstacle collision for player
-            OBSTACLES.forEach(box => {
-                const col = checkCircleBoxCollision(player.x, player.y, player.radius, box);
-                if (col.collided) {
-                    player.x += col.resolveX;
-                    player.y += col.resolveY;
-                }
-            });
+            // Aim towards nearest bug if enemies present, otherwise look in walking direction
+            if (bugs.length === 0 && player.isMoving) {
+                player.angle = player.facingAngle;
+            }
 
             // --- 2. Auto-Shoot Weapon ---
             player.fireCooldown -= dt;
@@ -798,38 +885,31 @@
                 let hitBug = false;
                 for (let j = bugs.length - 1; j >= 0; j--) {
                     const bug = bugs[j];
-                    const dist = Math.hypot(bug.x - b.x, bug.y - b.y);
-                    if (dist < bug.radius + b.radius) {
+                    const dist = Math.hypot(b.x - bug.x, b.y - bug.y);
+                    if (dist < b.radius + bug.radius) {
                         hitBug = true;
                         bug.hp -= b.damage;
+                        spawnParticles(b.x, b.y, bug.color, 5, 120);
+                        spawnFloatingText(bug.x, bug.y - 12, `-${b.damage}`, '#FDE047', 14);
                         playSound('hit');
-                        spawnParticles(b.x, b.y, b.color, 4, 110);
-                        spawnFloatingText(bug.x, bug.y - 12, `-${b.damage}`, '#FFFFFF');
 
-                        // Explosive splash damage
+                        // Explosive area splash damage
                         if (b.explosive) {
-                            playSound('plasma');
-                            spawnParticles(b.x, b.y, '#F43F5E', 12, 180);
-                            bugs.forEach(otherBug => {
-                                if (otherBug !== bug) {
-                                    const d2 = Math.hypot(otherBug.x - b.x, otherBug.y - b.y);
-                                    if (d2 < 70) {
-                                        otherBug.hp -= b.damage * 0.6;
-                                        spawnFloatingText(otherBug.x, otherBug.y - 10, `-${Math.round(b.damage * 0.6)}`, '#F43F5E');
+                            spawnParticles(b.x, b.y, '#F97316', 14, 180);
+                            bugs.forEach(other => {
+                                if (other !== bug) {
+                                    const splashDist = Math.hypot(other.x - b.x, other.y - b.y);
+                                    if (splashDist < 75) {
+                                        other.hp -= b.damage * 0.6;
+                                        spawnFloatingText(other.x, other.y - 10, `-${Math.round(b.damage * 0.6)}`, '#F97316', 12);
                                     }
                                 }
                             });
                         }
 
-                        // Bug Death
+                        // Bug Killed
                         if (bug.hp <= 0) {
-                            playSound('bug_death');
-                            totalKills++;
-                            spawnParticles(bug.x, bug.y, bug.color, 16, 170);
-                            for (let c = 0; c < bug.coinReward; c++) {
-                                spawnCoin(bug.x, bug.y, 1);
-                            }
-                            bugs.splice(j, 1);
+                            killBug(bug, j);
                         }
                         break;
                     }
@@ -840,44 +920,53 @@
                 }
             }
 
-            // --- 4. Update Enemy Bullets ---
+            // --- 4. Update Enemy Projectiles ---
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
                 const eb = enemyBullets[i];
                 eb.x += eb.vx * dt;
                 eb.y += eb.vy * dt;
                 eb.life -= dt;
 
-                // Player collision
-                const pDist = Math.hypot(player.x - eb.x, player.y - eb.y);
-                if (pDist < player.radius + eb.radius) {
-                    player.hp = Math.max(0, player.hp - eb.damage);
-                    playSound('player_hurt');
-                    spawnParticles(player.x, player.y, '#EF4444', 8, 140);
-                    spawnFloatingText(player.x, player.y - 15, `-${eb.damage}`, '#EF4444');
-                    updateHUD();
+                // Collision with player
+                const pDist = Math.hypot(eb.x - player.x, eb.y - player.y);
+                if (pDist < eb.radius + player.radius) {
+                    damagePlayer(eb.damage);
+                    spawnParticles(eb.x, eb.y, '#EF4444', 6, 120);
                     enemyBullets.splice(i, 1);
-
-                    if (player.hp <= 0) {
-                        handleGameOver();
-                        return;
-                    }
                     continue;
                 }
 
-                if (eb.life <= 0 || eb.x < WALL_THICKNESS || eb.x > ARENA_W - WALL_THICKNESS || eb.y < WALL_THICKNESS || eb.y > ARENA_H - WALL_THICKNESS) {
+                // Obstacle collision
+                let hitObs = false;
+                for (const box of OBSTACLES) {
+                    if (eb.x > box.x && eb.x < box.x + box.w && eb.y > box.y && eb.y < box.y + box.h) {
+                        hitObs = true;
+                        break;
+                    }
+                }
+
+                if (hitObs || eb.life <= 0 || eb.x < 0 || eb.x > ARENA_W || eb.y < 0 || eb.y > ARENA_H) {
                     enemyBullets.splice(i, 1);
                 }
             }
 
-            // --- 5. Update Bugs (Movement & Attacks) ---
+            // --- 5. Spawn Queue Handler ---
+            if (waveActive && bugsToSpawn.length > 0) {
+                waveSpawnTimer -= dt;
+                if (waveSpawnTimer <= 0) {
+                    const nextType = bugsToSpawn.shift();
+                    spawnBug(nextType);
+                    waveSpawnTimer = Math.max(0.5, 1.4 - currentWave * 0.05);
+                }
+            }
+
+            // --- 6. Update Bugs (AI, movement, collisions) ---
             bugs.forEach(bug => {
                 bug.walkCycle += dt * 10;
                 const angleToPlayer = Math.atan2(player.y - bug.y, player.x - bug.x);
                 const distToPlayer = Math.hypot(player.x - bug.x, player.y - bug.y);
 
-                // Spitter stays at distance, others charge
                 if (bug.type === 'spitter' && distToPlayer < 200) {
-                    // Back away slightly
                     bug.x -= Math.cos(angleToPlayer) * bug.speed * dt * 0.7;
                     bug.y -= Math.sin(angleToPlayer) * bug.speed * dt * 0.7;
                 } else {
@@ -894,125 +983,156 @@
                     }
                 });
 
-                // Bug attack logic
+                // Attack logic
                 if (bug.type === 'spitter' || bug.type === 'boss') {
                     enemyAttack(bug, dt);
                 }
 
                 // Melee contact with player
                 if (distToPlayer < bug.radius + player.radius) {
-                    player.hp = Math.max(0, player.hp - bug.damage * dt * 1.5);
-                    updateHUD();
-                    if (Math.random() < 0.12) {
-                        playSound('player_hurt');
-                        spawnParticles(player.x, player.y, '#EF4444', 3, 90);
-                    }
-                    if (player.hp <= 0) {
-                        handleGameOver();
-                        return;
-                    }
+                    damagePlayer(bug.damage * dt * 1.8);
                 }
             });
 
-            // --- 6. Update Coins (Physics & Magnet) ---
+            // --- 7. Update Coins (Physics, magnetic pull, collection) ---
             for (let i = coins.length - 1; i >= 0; i--) {
                 const c = coins[i];
                 c.rotation += dt * 5;
+
+                const dist = Math.hypot(player.x - c.x, player.y - c.y);
+
+                // Magnetic Attraction
+                if (dist < player.magnetRadius) {
+                    const angle = Math.atan2(player.y - c.y, player.x - c.x);
+                    const pullSpeed = 380 + (player.magnetRadius - dist) * 4;
+                    c.vx += Math.cos(angle) * pullSpeed * dt;
+                    c.vy += Math.sin(angle) * pullSpeed * dt;
+                }
+
                 c.x += c.vx * dt;
                 c.y += c.vy * dt;
                 c.vx *= 0.92;
                 c.vy *= 0.92;
-                c.life -= dt;
 
-                // Magnet effect towards player
-                const dist = Math.hypot(player.x - c.x, player.y - c.y);
-                if (dist < player.magnetRadius) {
-                    const pullSpeed = 450 + (1 - dist / player.magnetRadius) * 350;
-                    const angle = Math.atan2(player.y - c.y, player.x - c.x);
-                    c.x += Math.cos(angle) * pullSpeed * dt;
-                    c.y += Math.sin(angle) * pullSpeed * dt;
-                }
-
-                // Coin collected
-                if (dist < player.radius + c.radius) {
-                    totalCoins += c.val;
+                // Collection
+                if (dist < player.radius + 14) {
+                    totalCoins += c.value;
                     playSound('coin');
-                    spawnParticles(c.x, c.y, '#FCD34D', 5, 90);
-                    spawnFloatingText(player.x, player.y - 12, `+${c.val} 🪙`, '#FCD34D');
+                    spawnParticles(c.x, c.y, '#FCD34D', 5, 80);
+                    spawnFloatingText(c.x, c.y - 10, `+${c.value} 🪙`, '#FCD34D', 13);
                     updateHUD();
                     coins.splice(i, 1);
-                    continue;
-                }
-
-                if (c.life <= 0) {
-                    coins.splice(i, 1);
                 }
             }
 
-            // --- 7. Spawn Wave Queue ---
-            if (waveActive && bugsToSpawn.length > 0) {
-                waveSpawnTimer -= dt;
-                if (waveSpawnTimer <= 0) {
-                    spawnBug(bugsToSpawn.pop());
-                    waveSpawnTimer = 0.45 + Math.random() * 0.4;
-                }
-            }
-
-            // --- 8. Check Wave Clear ---
-            if (waveActive && bugsToSpawn.length === 0 && bugs.length === 0 && !waveTransition) {
-                waveTransition = true;
-                playSound('wave_clear');
-                const waveBonus = 10 + currentWave * 4;
-                totalCoins += waveBonus;
-                spawnFloatingText(ARENA_W / 2, ARENA_H / 2, `🎉 اكتملت الموجة! +${waveBonus} 🪙`, '#A855F7');
-                updateHUD();
-
-                setTimeout(() => {
-                    openShop();
-                }, 900);
-            }
-
-            // --- 9. Update Particles & Float Texts ---
+            // --- 8. Update Particles ---
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx * dt;
                 p.y += p.vy * dt;
-                p.alpha -= dt / p.life;
-                if (p.alpha <= 0) particles.splice(i, 1);
+                p.alpha -= p.decay * dt;
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
             }
 
+            // --- 9. Update Floating Texts ---
             for (let i = floatTexts.length - 1; i >= 0; i--) {
                 const ft = floatTexts[i];
                 ft.y += ft.vy * dt;
-                ft.alpha -= dt / ft.life;
-                if (ft.alpha <= 0) floatTexts.splice(i, 1);
+                ft.alpha -= 0.9 * dt;
+                if (ft.alpha <= 0) {
+                    floatTexts.splice(i, 1);
+                }
+            }
+
+            // --- 10. Wave Completion Check ---
+            if (waveActive && bugsToSpawn.length === 0 && bugs.length === 0 && !waveTransition) {
+                waveTransition = true;
+                waveActive = false;
+                playSound('wave_clear');
+
+                const bonus = 5 + currentWave * 2;
+                totalCoins += bonus;
+                updateHUD();
+                spawnFloatingText(ARENA_W / 2, ARENA_H / 2 - 30, `🎉 اكتملت الموجة! مكافأة +${bonus} 🪙`, '#A855F7', 18);
+
+                setTimeout(() => {
+                    if (gameActive) {
+                        openShop();
+                    }
+                }, 1200);
             }
         }
 
-        // Render Functions (Exact visual match to screenshot: Checkered purple floor, 3D pink tables, cyber bugs)
+        function damagePlayer(amount) {
+            player.hp -= amount;
+            playSound('player_hurt');
+            updateHUD();
+
+            if (player.hp <= 0) {
+                player.hp = 0;
+                updateHUD();
+                gameOver();
+            }
+        }
+
+        function killBug(bug, index) {
+            bugs.splice(index, 1);
+            totalKills++;
+            playSound('bug_death');
+            spawnParticles(bug.x, bug.y, bug.color, 16, 200);
+
+            // Drop bouncing coins
+            const dropCount = bug.coinReward || 1;
+            for (let k = 0; k < dropCount; k++) {
+                const angle = Math.random() * Math.PI * 2;
+                const spd = 40 + Math.random() * 80;
+                coins.push({
+                    x: bug.x,
+                    y: bug.y,
+                    vx: Math.cos(angle) * spd,
+                    vy: Math.sin(angle) * spd,
+                    value: 1,
+                    rotation: Math.random() * Math.PI
+                });
+            }
+        }
+
+        function gameOver() {
+            gameActive = false;
+            goWaveEl.textContent = currentWave;
+            goKillsEl.textContent = totalKills;
+            goCoinsEl.textContent = totalCoins;
+            gameOverModal.style.display = 'flex';
+        }
+
+        // ==========================================
+        // RENDER PIPELINE (Exact match to screenshot)
+        // ==========================================
         function drawArena() {
-            // Background / Floor Checkered Pattern
-            const tileSize = 42;
+            // Checkered Purple / Deep Indigo Floor Tiles
+            const tileSize = 44;
             const cols = Math.ceil(ARENA_W / tileSize);
             const rows = Math.ceil(ARENA_H / tileSize);
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const isEven = (r + c) % 2 === 0;
-                    ctx.fillStyle = isEven ? '#2C1B4D' : '#35215A';
+                    ctx.fillStyle = isEven ? '#3B2968' : '#2F1F56';
                     ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
                 }
             }
 
-            // Perimeter 3D Walls
-            ctx.fillStyle = '#1A0E32';
+            // Top-down Ambient Wall Borders (matching screenshot perimeter walls)
+            ctx.fillStyle = '#221442';
             ctx.fillRect(0, 0, ARENA_W, WALL_THICKNESS); // Top
             ctx.fillRect(0, ARENA_H - WALL_THICKNESS, ARENA_W, WALL_THICKNESS); // Bottom
             ctx.fillRect(0, 0, WALL_THICKNESS, ARENA_H); // Left
             ctx.fillRect(ARENA_W - WALL_THICKNESS, 0, WALL_THICKNESS, ARENA_H); // Right
 
             // Wall Bevel Lines
-            ctx.strokeStyle = '#4A2A7E';
+            ctx.strokeStyle = '#4A347F';
             ctx.lineWidth = 3;
             ctx.strokeRect(WALL_THICKNESS, WALL_THICKNESS, ARENA_W - WALL_THICKNESS * 2, ARENA_H - WALL_THICKNESS * 2);
 
@@ -1032,8 +1152,8 @@
                 ctx.roundRect(box.x, box.y + depth, box.w, box.h, 8);
                 ctx.fill();
 
-                // Top 3D Face (Bright Cute Pink matching screenshot)
-                ctx.fillStyle = '#F472B6';
+                // Top Surface (Light Vibrant Pink matching screenshot)
+                ctx.fillStyle = '#FF8DA1';
                 ctx.beginPath();
                 ctx.roundRect(box.x, box.y, box.w, box.h, 8);
                 ctx.fill();
@@ -1045,19 +1165,41 @@
             });
         }
 
-        // Draw Player (Cute hero matching screenshot: Yellow helmet, teal suit, blaster gun)
+        // Draw Player with lively walking animation and cute hero aesthetics
         function drawPlayer() {
             ctx.save();
             ctx.translate(player.x, player.y);
 
-            // Floor Shadow
+            // Floor Shadow (slight pulse with walking)
+            const shadowScale = player.isMoving ? 1 + Math.sin(player.walkCycle) * 0.08 : 1;
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
             ctx.beginPath();
-            ctx.ellipse(0, 16, player.radius * 1.1, player.radius * 0.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 16, player.radius * 1.1 * shadowScale, player.radius * 0.6 * shadowScale, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Rotate towards aim direction
+            // Animated Walking Boots/Feet
+            const footWiggle = player.isMoving ? Math.sin(player.walkCycle) * 7 : 0;
+            ctx.save();
+            ctx.rotate(player.facingAngle || player.angle);
+
+            // Left Boot
+            ctx.fillStyle = '#1E293B';
+            ctx.beginPath();
+            ctx.roundRect(-8 + footWiggle, -14, 10, 6, 3);
+            ctx.fill();
+
+            // Right Boot
+            ctx.fillStyle = '#1E293B';
+            ctx.beginPath();
+            ctx.roundRect(-8 - footWiggle, 8, 10, 6, 3);
+            ctx.fill();
+            ctx.restore();
+
+            // Rotate towards aim/target direction
             ctx.rotate(player.angle);
+
+            // Body bobbing while walking
+            const bob = player.isMoving ? Math.abs(Math.sin(player.walkCycle)) * 2.5 : Math.sin(player.walkCycle) * 0.8;
 
             // Backpack / Oxygen Tank
             ctx.fillStyle = '#1E293B';
@@ -1068,32 +1210,32 @@
             // Teal Suit Body
             ctx.fillStyle = '#06B6D4';
             ctx.beginPath();
-            ctx.roundRect(-12, -14, 20, 28, 9);
+            ctx.roundRect(-12, -14 - bob * 0.2, 20, 28, 9);
             ctx.fill();
 
-            // Yellow Round Helmet / Head
+            // Yellow Round Helmet / Head (Exact match to screenshot)
             ctx.fillStyle = '#FBBF24';
             ctx.beginPath();
-            ctx.arc(0, 0, 13, 0, Math.PI * 2);
+            ctx.arc(0, 0 - bob * 0.4, 13, 0, Math.PI * 2);
             ctx.fill();
 
             // Dark Visor / Eyes
             ctx.fillStyle = '#0F172A';
             ctx.beginPath();
-            ctx.roundRect(4, -6, 7, 12, 3);
+            ctx.roundRect(4, -6 - bob * 0.4, 7, 12, 3);
             ctx.fill();
 
             // Blaster Weapon
             const tier = WEAPON_TIERS[upgrades.weaponLevel - 1];
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(10, 6, 16, 5);
+            ctx.fillRect(10, 6 - bob * 0.3, 16, 5);
             ctx.fillStyle = tier.color;
-            ctx.fillRect(18, 5, 8, 7);
+            ctx.fillRect(18, 5 - bob * 0.3, 8, 7);
 
             ctx.restore();
         }
 
-        // Draw Bug (Purple spider / crawler / mech tank)
+        // Draw Bug (Purple crawler spider / robotic mech beetle)
         function drawBug(bug) {
             ctx.save();
             ctx.translate(bug.x, bug.y);
@@ -1114,7 +1256,6 @@
             ctx.lineWidth = bug.type === 'boss' ? 5 : (bug.type === 'tank' ? 4 : 2.5);
             ctx.lineCap = 'round';
 
-            // 6-8 Spider Legs
             const legAngles = [-0.7, 0, 0.7];
             legAngles.forEach((la, idx) => {
                 const wiggle = idx % 2 === 0 ? legWiggle : -legWiggle;
@@ -1137,7 +1278,7 @@
 
             // Bug Body
             if (bug.type === 'tank' || bug.type === 'boss') {
-                // Square Mech Armor (as in screenshot!)
+                // Square Mech Armor (exact match to screenshot!)
                 ctx.fillStyle = bug.color;
                 ctx.beginPath();
                 ctx.roundRect(-bug.radius, -bug.radius, bug.radius * 2, bug.radius * 2, 8);
@@ -1189,7 +1330,6 @@
             ctx.save();
             ctx.translate(c.x, c.y);
 
-            // Rotating Oval 3D Illusion
             const scaleX = Math.abs(Math.cos(c.rotation));
             ctx.scale(scaleX, 1);
 
@@ -1216,7 +1356,12 @@
 
         // Main Render Loop
         function render() {
-            ctx.clearRect(0, 0, ARENA_W, ARENA_H);
+            // Clean frame reset
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Scale virtual arena coordinates (0..ARENA_W, 0..ARENA_H) to real canvas pixels
+            ctx.setTransform(canvas.width / ARENA_W, 0, 0, canvas.height / ARENA_H, 0, 0);
 
             drawArena();
 
@@ -1253,145 +1398,140 @@
 
             // Draw Particles
             particles.forEach(p => {
-                ctx.fillStyle = p.color;
+                ctx.save();
                 ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = p.color;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             });
-            ctx.globalAlpha = 1.0;
 
-            // Draw Floating Text
-            ctx.font = 'bold 13px Tajawal, sans-serif';
-            ctx.textAlign = 'center';
+            // Draw Floating Damage & Coin Texts
             floatTexts.forEach(ft => {
-                ctx.fillStyle = ft.color;
+                ctx.save();
                 ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.font = `900 ${ft.size}px var(--font-kids), 'Tajawal', sans-serif`;
+                ctx.fillStyle = ft.color;
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 6;
                 ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
             });
-            ctx.globalAlpha = 1.0;
         }
 
-        // Animation Loop
-        function gameLoop(now) {
-            const dt = Math.min((now - lastTime) / 1000, 0.08);
-            lastTime = now;
+        // Game Loop
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
 
             update(dt);
             render();
 
-            if (gameActive) {
-                animId = requestAnimationFrame(gameLoop);
-            }
+            animId = requestAnimationFrame(gameLoop);
         }
 
-        // Game Over Handler
-        function handleGameOver() {
-            gameActive = false;
-            playSound('player_hurt');
-            goWaveEl.textContent = currentWave;
-            goKillsEl.textContent = totalKills;
-            goCoinsEl.textContent = totalCoins;
-            gameOverModal.style.display = 'flex';
-        }
-
-        // Upgrade Shop UI & Purchasing
+        // ==========================================
+        // UPGRADE SHOP SYSTEM
+        // ==========================================
         function renderShopItems() {
             shopItems.innerHTML = '';
 
             const items = [
                 {
                     id: 'weapon',
-                    title: '🔫 سلاح البلازما (Weapon Tier)',
-                    curr: upgrades.weaponLevel,
-                    max: WEAPON_TIERS.length,
-                    desc: WEAPON_TIERS[upgrades.weaponLevel - 1].name,
-                    nextDesc: upgrades.weaponLevel < WEAPON_TIERS.length ? `التالي: ${WEAPON_TIERS[upgrades.weaponLevel].name}` : 'الحد الأقصى (MAX)!',
-                    cost: upgrades.weaponLevel < WEAPON_TIERS.length ? (upgrades.weaponLevel * 25 + 15) : null
+                    title: 'ترقية السلاح 🔫',
+                    desc: WEAPON_TIERS[Math.min(WEAPON_TIERS.length - 1, upgrades.weaponLevel)].name,
+                    level: upgrades.weaponLevel,
+                    maxLevel: WEAPON_TIERS.length,
+                    cost: upgrades.weaponLevel * 15,
+                    icon: '🔫',
+                    color: '#38BDF8'
                 },
                 {
                     id: 'speed',
-                    title: '⚡ سرعة حركة البطل (Hero Speed)',
-                    curr: upgrades.speedLevel,
-                    max: 6,
-                    desc: `السرعة: ${Math.round(player.speed)} px/s`,
-                    nextDesc: upgrades.speedLevel < 6 ? `زيادة سرعة الحركة (+15%)` : 'الحد الأقصى (MAX)!',
-                    cost: upgrades.speedLevel < 6 ? (upgrades.speedLevel * 15 + 10) : null
+                    title: 'سرعة البطل ⚡',
+                    desc: `زيادة السرعة إلى ${Math.round(235 + upgrades.speedLevel * 32)} وحدة`,
+                    level: upgrades.speedLevel,
+                    maxLevel: 8,
+                    cost: 8 + upgrades.speedLevel * 6,
+                    icon: '👟',
+                    color: '#FBBF24'
                 },
                 {
                     id: 'fireRate',
-                    title: '⏱️ سرعة إطلاق النار (Fire Rate)',
-                    curr: upgrades.fireRateLevel,
-                    max: 6,
-                    desc: `المعدل: ${player.fireRate.toFixed(1)} طلقة/ثانية`,
-                    nextDesc: upgrades.fireRateLevel < 6 ? `زيادة سرعة الرمي (+25%)` : 'الحد الأقصى (MAX)!',
-                    cost: upgrades.fireRateLevel < 6 ? (upgrades.fireRateLevel * 18 + 12) : null
+                    title: 'معدل إطلاق النار 🔥',
+                    desc: 'إطلاق رصاص أسرع على الحشرات',
+                    level: upgrades.fireRateLevel,
+                    maxLevel: 6,
+                    cost: 10 + upgrades.fireRateLevel * 8,
+                    icon: '⚡',
+                    color: '#EF4444'
                 },
                 {
                     id: 'maxHp',
-                    title: '💖 الصحة والدروع (Health & Heal)',
-                    curr: upgrades.maxHpLevel,
-                    max: 6,
-                    desc: `الصحة القصوى: ${player.maxHp} HP`,
-                    nextDesc: upgrades.maxHpLevel < 6 ? `زيادة الصحة (+35 HP) وشفاء كامل` : 'الحد الأقصى (MAX)!',
-                    cost: upgrades.maxHpLevel < 6 ? (upgrades.maxHpLevel * 14 + 10) : null
+                    title: 'نقاط الحياة والشفاء ❤️',
+                    desc: '+35 نقطة حياة مع استعادة كامل الصحة',
+                    level: upgrades.maxHpLevel,
+                    maxLevel: 6,
+                    cost: 12 + upgrades.maxHpLevel * 8,
+                    icon: '💖',
+                    color: '#EC4899'
                 },
                 {
                     id: 'magnet',
-                    title: '🧲 مغناطيس الكوينز (Coin Magnet)',
-                    curr: upgrades.magnetLevel,
-                    max: 5,
-                    desc: `مدى الجذب: ${player.magnetRadius}px`,
-                    nextDesc: upgrades.magnetLevel < 5 ? `جذب الكوينز من مسافات أبعد (+45px)` : 'الحد الأقصى (MAX)!',
-                    cost: upgrades.magnetLevel < 5 ? (upgrades.magnetLevel * 12 + 8) : null
+                    title: 'مغناطيس الكوينز 🧲',
+                    desc: 'جذب الكوينز الذهبية من مسافات أبعد',
+                    level: upgrades.magnetLevel,
+                    maxLevel: 5,
+                    cost: 8 + upgrades.magnetLevel * 6,
+                    icon: '🧲',
+                    color: '#A855F7'
                 }
             ];
 
             items.forEach(item => {
+                const isMax = item.level >= item.maxLevel;
+                const canAfford = totalCoins >= item.cost && !isMax;
+
                 const card = document.createElement('div');
                 card.style.cssText = `
-                    background: #23143F;
-                    border: 1.5px solid #3B206E;
+                    background: #251445;
+                    border: 2px solid ${item.color};
                     border-radius: 16px;
                     padding: 10px 14px;
                     display: flex;
-                    justify-content: space-between;
                     align-items: center;
-                    box-sizing: border-box;
+                    justify-content: space-between;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
                     direction: rtl;
                 `;
 
-                const canAfford = item.cost !== null && totalCoins >= item.cost;
-                const isMax = item.cost === null;
-
                 card.innerHTML = `
-                    <div style="flex: 1; text-align: right;">
-                        <div style="font-size: 13.5px; font-weight: 900; color: #F3E8FF; margin-bottom: 2px;">
-                            ${item.title} <span style="font-size: 11px; color: #C084FC;">(${item.curr}/${item.max})</span>
-                        </div>
-                        <div style="font-size: 11.5px; color: #94A3B8;">
-                            ${item.desc} • <span style="color: #38BDF8;">${item.nextDesc}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 26px;">${item.icon}</span>
+                        <div>
+                            <div style="font-size: 14.5px; font-weight: 900; color: #FFFFFF;">${item.title} (مستوى ${item.level})</div>
+                            <div style="font-size: 11px; color: #CBD5E1;">${item.desc}</div>
                         </div>
                     </div>
-
-                    <div style="margin-right: 10px;">
-                        <button class="bh-buy-btn" data-id="${item.id}" style="
-                            background: ${isMax ? '#4B5563' : (canAfford ? 'linear-gradient(135deg, #10B981, #059669)' : '#374151')};
-                            color: white;
-                            border: none;
-                            border-radius: 12px;
-                            padding: 6px 12px;
-                            font-size: 12px;
-                            font-weight: 900;
-                            cursor: ${canAfford ? 'pointer' : 'not-allowed'};
-                            display: flex;
-                            align-items: center;
-                            gap: 4px;
-                            box-shadow: ${canAfford ? '0 2px 8px rgba(16,185,129,0.4)' : 'none'};
-                        ">
-                            ${isMax ? 'مكتمل ✅' : `<span>${item.cost}</span> 🪙`}
-                        </button>
-                    </div>
+                    <button class="bh-buy-btn" style="
+                        background: ${isMax ? '#475569' : (canAfford ? 'linear-gradient(135deg, #10B981, #059669)' : '#334155')};
+                        color: white;
+                        border: none;
+                        border-radius: 12px;
+                        padding: 8px 14px;
+                        font-size: 13px;
+                        font-weight: 900;
+                        cursor: ${canAfford ? 'pointer' : 'default'};
+                        opacity: ${canAfford ? '1' : '0.6'};
+                        box-shadow: ${canAfford ? '0 3px 10px rgba(16,185,129,0.4)' : 'none'};
+                        white-space: nowrap;
+                    ">
+                        ${isMax ? 'مكتمل ✅' : `${item.cost} 🪙`}
+                    </button>
                 `;
 
                 if (canAfford) {
@@ -1415,7 +1555,7 @@
             else if (type === 'fireRate') upgrades.fireRateLevel++;
             else if (type === 'maxHp') {
                 upgrades.maxHpLevel++;
-                player.hp = player.maxHp; // Full heal on health upgrade!
+                player.hp = player.maxHp;
             } else if (type === 'magnet') upgrades.magnetLevel++;
 
             recalculateStats();
@@ -1433,7 +1573,6 @@
             isShopOpen = false;
             shopModal.style.display = 'none';
 
-            // If wave was cleared, start next wave
             if (waveTransition) {
                 prepareWave(currentWave + 1);
             }
@@ -1446,8 +1585,8 @@
         // Restart Game
         restartBtn.addEventListener('click', () => {
             gameOverModal.style.display = 'none';
-            player.x = ARENA_W / 2 - 30;
-            player.y = ARENA_H - 180;
+            player.x = 170;
+            player.y = 550;
             player.hp = player.maxHp;
             bugs = [];
             bullets = [];
@@ -1473,13 +1612,38 @@
         // Cleanup on Exit
         function cleanup() {
             gameActive = false;
-            if (animId) cancelAnimationFrame(animId);
+            if (animId) {
+                cancelAnimationFrame(animId);
+                animId = null;
+            }
             window.removeEventListener('resize', resizeCanvas);
-            canvasContainer.removeEventListener('touchstart', onTouchStart);
-            window.removeEventListener('touchmove', onTouchMove);
-            window.removeEventListener('touchend', onTouchEnd);
-            window.removeEventListener('touchcancel', onTouchEnd);
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('keyup', onKeyUp);
+            canvasContainer.removeEventListener('pointerdown', onPointerDown);
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
             container.removeEventListener('game-exit', cleanup);
+
+            // Restore container original styles
+            container.classList.remove('bug-hunter-mode');
+            container.style.padding = originalPadding;
+            container.style.border = originalBorder;
+            container.style.backgroundColor = originalBg;
+            container.style.borderRadius = originalRadius;
+            container.style.height = originalHeight;
+            container.style.minHeight = '';
+            container.style.maxHeight = '';
+            container.style.maxWidth = originalMaxWidth;
+            container.style.margin = originalMargin;
+            container.style.boxShadow = originalBoxShadow;
+            container.style.display = '';
+            container.style.flexDirection = '';
+            container.style.overflow = '';
+
+            if (appContainer) {
+                appContainer.style.maxWidth = '';
+            }
         }
         container.addEventListener('game-exit', cleanup);
     };

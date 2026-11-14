@@ -2216,3 +2216,38 @@ canvas {
     transition: all 0.15s ease;
 }
 
+/* ============================================================= */
+/* BUG HUNTER (صائد الحشرات) - Mobile Fullscreen Mode */
+/* ============================================================= */
+.game-area.bug-hunter-mode {
+    width: 100% !important;
+    max-width: 480px !important;
+    height: calc(100vh - 20px) !important;
+    min-height: 620px !important;
+    max-height: 900px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #090514 !important;
+    border-radius: 26px !important;
+    box-shadow: 0 14px 45px rgba(0, 0, 0, 0.6) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+}
+
+@media (max-width: 500px) {
+    .app-container:has(.bug-hunter-mode) {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    .game-area.bug-hunter-mode {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+
