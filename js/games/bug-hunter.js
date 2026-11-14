@@ -197,11 +197,6 @@
                         <div id="bhWaveBannerTitle" style="font-size: 24px; font-weight: 900; color: #E9D5FF; margin-bottom: 4px;">🔥 الموجة 1</div>
                         <div id="bhWaveBannerSub" style="font-size: 13px; font-weight: bold; color: #C084FC;">اقضِ على الحشرات واجمع الكوينز!</div>
                     </div>
-
-                    <!-- Virtual Joystick Area (Always visible at bottom left for touch & mouse drag) -->
-                    <div id="bhJoystickContainer" style="position: absolute; bottom: 25px; left: 25px; width: 105px; height: 105px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 2.5px dashed rgba(255,255,255,0.3); pointer-events: none; z-index: 12; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-                        <div id="bhJoystickThumb" style="width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle, #FBBF24, #D97706); border: 2.5px solid #FFFFFF; box-shadow: 0 3px 12px rgba(217,119,6,0.6); transform: translate(0px, 0px); transition: transform 0.04s ease-out;"></div>
-                    </div>
                 </div>
 
                 <!-- CONTROLS HINT BANNER -->
@@ -290,8 +285,6 @@
         const goWaveEl = document.getElementById('bhGoWave');
         const goKillsEl = document.getElementById('bhGoKills');
         const goCoinsEl = document.getElementById('bhGoCoins');
-        const joystickContainer = document.getElementById('bhJoystickContainer');
-        const joystickThumb = document.getElementById('bhJoystickThumb');
 
         // Dynamic Virtual Arena Dimensions (Preserves 100% 1:1 Aspect Ratio without ANY stretching)
         const ARENA_W = 480;
@@ -464,14 +457,6 @@
             pointerCurrent = { x: px, y: py };
             moveVector = { x: 0, y: 0 };
 
-            // Dynamic joystick position near touch point
-            const joyX = Math.max(55, Math.min(rect.width - 55, px));
-            const joyY = Math.max(55, Math.min(rect.height - 55, py));
-            joystickContainer.style.left = `${joyX - 52}px`;
-            joystickContainer.style.top = `${joyY - 52}px`;
-            joystickContainer.style.bottom = 'auto';
-            joystickThumb.style.transform = 'translate(0px, 0px)';
-
             // Tap target in Arena coordinates (tap to walk)
             const arenaX = (px / rect.width) * ARENA_W;
             const arenaY = (py / rect.height) * ARENA_H;
@@ -496,10 +481,8 @@
                 const clampedDist = Math.min(dist, maxRadius);
                 moveVector.x = (dx / dist) * (clampedDist / maxRadius);
                 moveVector.y = (dy / dist) * (clampedDist / maxRadius);
-                joystickThumb.style.transform = `translate(${moveVector.x * maxRadius}px, ${moveVector.y * maxRadius}px)`;
             } else {
                 moveVector = { x: 0, y: 0 };
-                joystickThumb.style.transform = 'translate(0px, 0px)';
             }
         }
 
@@ -508,12 +491,6 @@
             isPointerDown = false;
             pointerId = null;
             moveVector = { x: 0, y: 0 };
-            joystickThumb.style.transform = 'translate(0px, 0px)';
-
-            // Reset joystick to default bottom-left corner
-            joystickContainer.style.left = '25px';
-            joystickContainer.style.top = 'auto';
-            joystickContainer.style.bottom = '25px';
         }
 
         canvasContainer.addEventListener('pointerdown', onPointerDown);
