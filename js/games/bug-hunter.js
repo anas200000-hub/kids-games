@@ -169,9 +169,13 @@
                         <span style="color: #FF3366; font-size: 17px; filter: drop-shadow(0 0 5px rgba(255,51,102,0.6));">❤️</span>
                     </div>
 
-                    <!-- Wave in Center -->
-                    <div style="font-size: 19px; font-weight: 900; color: #FFFFFF; letter-spacing: 0.5px; text-shadow: 0 2px 8px rgba(168,85,247,0.5);">
-                        <span id="bhWaveTitle">الموجة 1</span>
+                    <!-- Wave in Center + Upgrade Button right next to it -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="bhWaveTitle" style="font-size: 18px; font-weight: 900; color: #FFFFFF; letter-spacing: 0.5px; text-shadow: 0 2px 8px rgba(168,85,247,0.5);">الموجة 1</span>
+                        <button id="bhOpenShopBtn" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: #FFFFFF; border: 2px solid #FDE68A; border-radius: 14px; padding: 4px 10px; font-size: 12px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 8px rgba(245,158,11,0.5); display: flex; align-items: center; gap: 4px; transition: transform 0.1s;">
+                            <span style="font-size: 13px;">🛒</span>
+                            <span>الترقية</span>
+                        </button>
                     </div>
 
                     <!-- Coins on Right -->
@@ -184,13 +188,6 @@
                 <!-- MAIN 2.5D CANVAS CONTAINER (Fills all available mobile height) -->
                 <div id="bhCanvasContainer" style="flex: 1 1 0; min-height: 0; width: 100%; position: relative; background: #180D30; overflow: hidden; touch-action: none; cursor: crosshair;">
                     <canvas id="bhCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
-
-                    <!-- Floating Action Buttons on Canvas -->
-                    <!-- Upgrade Shop Button -->
-                    <button id="bhOpenShopBtn" style="position: absolute; bottom: 20px; right: 20px; background: linear-gradient(135deg, #F59E0B, #D97706); color: #FFFFFF; border: 2.5px solid #FDE68A; border-radius: 18px; padding: 10px 16px; font-size: 14px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(245,158,11,0.5); display: flex; align-items: center; gap: 6px; z-index: 15; transition: transform 0.1s;">
-                        <span style="font-size: 18px;">🛒</span>
-                        <span>الترقية</span>
-                    </button>
 
                     <!-- Wave Announcement Banner -->
                     <div id="bhWaveBanner" style="display: none; position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 10, 28, 0.94); border: 3px solid #A855F7; border-radius: 20px; padding: 14px 26px; text-align: center; color: white; box-shadow: 0 8px 30px rgba(168,85,247,0.6); z-index: 20; pointer-events: none; animation: popBounce 0.4s ease-out;">
