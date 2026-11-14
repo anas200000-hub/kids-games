@@ -77,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'arrowTarget', emoji: '🏹', image: 'assets/images/arrow_target_card.png', title: 'قناص السهام', color: 'linear-gradient(135deg, #FFF59D, #D84315)' },
         { id: 'spaceShooter', emoji: '🚀', image: 'assets/images/space_shooter_card.png', title: 'حارس المجرة', color: 'linear-gradient(135deg, #1A237E, #4A148C)' },
         { id: 'game2048', emoji: '🔢', title: 'لعبة 2048 للأبطال', color: 'linear-gradient(135deg, #FF9800, #F44336)' },
-        { id: 'walkersAttack', emoji: '🧟', image: 'assets/images/walkers_attack_card.png', title: 'هجوم الموتى السائرين', color: 'linear-gradient(135deg, #1e293b, #ef4444)' },
         { id: 'meowDoku', emoji: '🐱', image: 'assets/images/meow_doku_card.png', title: 'مياو دوكو (سودوكو القطط)', color: 'linear-gradient(135deg, #FF9A9E, #FAD0C4)' },
         { id: 'bugHunter', emoji: '🪲', image: 'assets/images/bug_hunter_card.png', title: 'صائد الحشرات', color: 'linear-gradient(135deg, #3A1C71, #D76D77)' }
     ];
@@ -308,9 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'game2048':
                 if (window.initGame2048) window.initGame2048(gameArea);
-                break;
-            case 'walkersAttack':
-                if (window.initWalkersAttackGame) window.initWalkersAttackGame(gameArea);
                 break;
             case 'meowDoku':
                 if (window.initMeowDokuGame) window.initMeowDokuGame(gameArea);
