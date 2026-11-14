@@ -1000,16 +1000,11 @@
             const allBugsDead = waveActive && bugsToSpawn.length === 0 && bugs.length === 0;
 
             if (allBugsDead && !waveTransition) {
-                if (coins.length > 0) {
-                    // All bugs killed, but coins remain on floor!
-                    waveBannerTitle.textContent = `🪙 اجمع الكوينز!`;
-                    waveBannerSub.textContent = `اجمع كل الكوينز (${coins.length} متبقية) للانتقال للموجة التالية!`;
-                    waveBanner.style.display = 'block';
-                } else {
-                    // All bugs dead AND all coins collected from screen!
+                // Only transition once all bugs are dead AND all coins on screen are collected
+                if (coins.length === 0) {
                     waveTransition = true;
                     waveActive = false;
-                    waveBanner.style.display = 'none';
+                    if (waveBanner) waveBanner.style.display = 'none';
                     playSound('wave_clear');
 
                     const bonus = 5 + currentWave * 2;
