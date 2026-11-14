@@ -188,12 +188,6 @@
                 <!-- MAIN 2.5D CANVAS CONTAINER (Fills all available mobile height) -->
                 <div id="bhCanvasContainer" style="flex: 1 1 0; min-height: 0; width: 100%; position: relative; background: #180D30; overflow: hidden; touch-action: none; cursor: crosshair;">
                     <canvas id="bhCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
-
-                    <!-- Wave Announcement Banner -->
-                    <div id="bhWaveBanner" style="display: none; position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 10, 28, 0.94); border: 3px solid #A855F7; border-radius: 20px; padding: 14px 26px; text-align: center; color: white; box-shadow: 0 8px 30px rgba(168,85,247,0.6); z-index: 20; pointer-events: none; animation: popBounce 0.4s ease-out;">
-                        <div id="bhWaveBannerTitle" style="font-size: 24px; font-weight: 900; color: #E9D5FF; margin-bottom: 4px;">🔥 الموجة 1</div>
-                        <div id="bhWaveBannerSub" style="font-size: 13px; font-weight: bold; color: #C084FC;">اقضِ على الحشرات واجمع الكوينز!</div>
-                    </div>
                 </div>
 
                 <!-- CONTROLS HINT BANNER -->
@@ -274,9 +268,6 @@
         const shopModal = document.getElementById('bhShopModal');
         const shopCoins = document.getElementById('bhShopCoins');
         const shopItems = document.getElementById('bhShopItems');
-        const waveBanner = document.getElementById('bhWaveBanner');
-        const waveBannerTitle = document.getElementById('bhWaveBannerTitle');
-        const waveBannerSub = document.getElementById('bhWaveBannerSub');
         const gameOverModal = document.getElementById('bhGameOverModal');
         const restartBtn = document.getElementById('bhRestartBtn');
         const goWaveEl = document.getElementById('bhGoWave');
@@ -575,15 +566,6 @@
             waveSpawnTimer = 0.5;
             waveActive = true;
             waveTransition = false;
-
-            waveBannerTitle.textContent = hasBoss ? `🚨 زعيم الموجة ${wave}!` : `🔥 الموجة ${wave}`;
-            waveBannerSub.textContent = hasBoss ? 'حشرة آلية عملاقة تقترب! احذر من ضرباتها!' : `اقضِ على ${bugsToSpawn.length} حشرة واجمع الكوينز!`;
-            waveBanner.style.display = 'block';
-            setTimeout(() => {
-                if (waveActive && !waveTransition) {
-                    waveBanner.style.display = 'none';
-                }
-            }, 1800);
         }
 
         // Diverse Colorful Bug Palettes for lively visual variety
