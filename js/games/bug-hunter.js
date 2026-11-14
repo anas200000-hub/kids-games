@@ -470,14 +470,13 @@
             const dx = pointerCurrent.x - pointerStart.x;
             const dy = pointerCurrent.y - pointerStart.y;
             const dist = Math.hypot(dx, dy);
-            const maxRadius = 42;
 
-            if (dist > 6) {
+            if (dist > 5) {
                 // Dragging detected -> cancel tap-to-move point and use directional drag
                 clickTarget = null;
-                const clampedDist = Math.min(dist, maxRadius);
-                moveVector.x = (dx / dist) * (clampedDist / maxRadius);
-                moveVector.y = (dy / dist) * (clampedDist / maxRadius);
+                // Pure direction unit vector - strictly constant speed without any acceleration
+                moveVector.x = dx / dist;
+                moveVector.y = dy / dist;
             } else {
                 moveVector = { x: 0, y: 0 };
             }
@@ -822,11 +821,12 @@
             }
 
             const len = Math.hypot(moveX, moveY);
-            player.isMoving = len > 0.05;
+            player.isMoving = len > 0.001;
 
             if (player.isMoving) {
-                const normX = moveX / Math.max(1, len);
-                const normY = moveY / Math.max(1, len);
+                // Strictly normalize to unit direction vector = 1.0 (Always single constant speed, zero acceleration)
+                const normX = moveX / len;
+                const normY = moveY / len;
 
                 // Axis-separated movement & collision for effortless sliding
                 player.x += normX * player.speed * dt;
