@@ -587,6 +587,42 @@
             }, 1800);
         }
 
+        // Diverse Colorful Bug Palettes for lively visual variety
+        const SPIDER_PALETTES = [
+            { color: '#9333EA', accent: '#FDE047' }, // Classic Neon Purple with Yellow Eyes
+            { color: '#16A34A', accent: '#86EFAC' }, // Toxic Forest Emerald with Lime Eyes
+            { color: '#DC2626', accent: '#FEF08A' }, // Crimson Fire Spider with Bright Eyes
+            { color: '#0284C7', accent: '#7DD3FC' }, // Electric Cobalt Blue with Sky Eyes
+            { color: '#D97706', accent: '#FDE68A' }, // Golden Amber Desert Spider
+            { color: '#DB2777', accent: '#A7F3D0' }, // Vibrant Hot Pink with Mint Eyes
+            { color: '#0D9488', accent: '#5EEAD4' }  // Cyber Turquoise Spider
+        ];
+
+        const TANK_PALETTES = [
+            { color: '#4C1D95', accent: '#FBBF24' }, // Classic Cyber Indigo Mech
+            { color: '#991B1B', accent: '#F97316' }, // Magma Armor Mech with Orange Decals
+            { color: '#065F46', accent: '#34D399' }, // Heavy Toxic Mech with Neon Lime Decals
+            { color: '#1E40AF', accent: '#60A5FA' }, // Deep Blue Heavy Mech with Ice Blue Decals
+            { color: '#B45309', accent: '#FDE047' }, // Heavy Bronze Titan with Gold Decals
+            { color: '#374151', accent: '#EF4444' }  // Stealth Shadow Mech with Crimson Decals
+        ];
+
+        const FAST_SPIDER_PALETTES = [
+            { color: '#C026D3', accent: '#F472B6' }, // Neon Fuchsia
+            { color: '#E11D48', accent: '#FDA4AF' }, // Bright Ruby
+            { color: '#059669', accent: '#6EE7B7' }, // Neon Mint
+            { color: '#7C3AED', accent: '#C4B5FD' }, // Bright Violet
+            { color: '#EA580C', accent: '#FDBA74' }  // Radiant Orange
+        ];
+
+        const BOSS_PALETTES = [
+            { color: '#6B21A8', accent: '#EF4444' }, // Shadow Overlord
+            { color: '#991B1B', accent: '#FBBF24' }, // Flame Goliath
+            { color: '#065F46', accent: '#22C55E' }, // Biohazard Behemoth
+            { color: '#1E3A8A', accent: '#38BDF8' }, // Abyssal Leviathan
+            { color: '#78350F', accent: '#FDE047' }  // Golden Emperor Beetle
+        ];
+
         function spawnBug(type) {
             let x, y;
             const side = Math.floor(Math.random() * 4);
@@ -605,6 +641,8 @@
             }
 
             if (type === 'boss') {
+                const bIdx = (Math.floor(currentWave / 5) - 1) % BOSS_PALETTES.length;
+                const palette = BOSS_PALETTES[Math.max(0, bIdx)];
                 bugs.push({
                     type: 'boss',
                     x: ARENA_W / 2,
@@ -614,12 +652,13 @@
                     maxHp: 550 + currentWave * 160,
                     speed: 68 + currentWave * 2,
                     damage: 28,
-                    color: '#6B21A8',
-                    accentColor: '#EF4444',
+                    color: palette.color,
+                    accentColor: palette.accent,
                     coinReward: 25 + currentWave * 4,
                     walkCycle: 0
                 });
             } else if (type === 'tank') {
+                const palette = TANK_PALETTES[Math.floor(Math.random() * TANK_PALETTES.length)];
                 bugs.push({
                     type: 'tank',
                     x, y,
@@ -628,12 +667,13 @@
                     maxHp: 100 + currentWave * 28,
                     speed: 68 + currentWave * 2.5,
                     damage: 18,
-                    color: '#4C1D95',
-                    accentColor: '#FBBF24',
+                    color: palette.color,
+                    accentColor: palette.accent,
                     coinReward: 4,
                     walkCycle: 0
                 });
             } else if (type === 'fast_spider') {
+                const palette = FAST_SPIDER_PALETTES[Math.floor(Math.random() * FAST_SPIDER_PALETTES.length)];
                 bugs.push({
                     type: 'fast_spider',
                     x, y,
@@ -642,13 +682,14 @@
                     maxHp: 30 + currentWave * 8,
                     speed: 135 + currentWave * 4,
                     damage: 8,
-                    color: '#C026D3',
-                    accentColor: '#F472B6',
+                    color: palette.color,
+                    accentColor: palette.accent,
                     coinReward: 2,
                     walkCycle: 0
                 });
             } else {
-                // Regular Spider (Exact matching colors from screenshot)
+                // Regular Spider with rich colorful variations
+                const palette = SPIDER_PALETTES[Math.floor(Math.random() * SPIDER_PALETTES.length)];
                 bugs.push({
                     type: 'spider',
                     x, y,
@@ -657,8 +698,8 @@
                     maxHp: 35 + currentWave * 10,
                     speed: 105 + currentWave * 4,
                     damage: 10,
-                    color: '#9333EA',
-                    accentColor: '#FDE047',
+                    color: palette.color,
+                    accentColor: palette.accent,
                     coinReward: 1,
                     walkCycle: 0
                 });
