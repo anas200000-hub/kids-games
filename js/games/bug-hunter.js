@@ -1,6 +1,6 @@
 // Game: Bug Hunter (صائد الحشرات)
 // Fast-paced 2.5D Isometric Bug Defense & Upgrade Shooter
-// Fullscreen Mobile Phone Experience with Smooth Walking Controls
+// Perfect 1:1 Aspect Ratio (No Stretching), Melee Bugs, Coin-Collection Wave Gate, 30 Upgrade Levels
 (function() {
     window.initBugHunterGame = function(container) {
         // Enforce mobile-sized full screen layout (do NOT use wide-mode)
@@ -193,8 +193,8 @@
                     </button>
 
                     <!-- Wave Announcement Banner -->
-                    <div id="bhWaveBanner" style="display: none; position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 10, 28, 0.92); border: 3px solid #A855F7; border-radius: 20px; padding: 14px 28px; text-align: center; color: white; box-shadow: 0 8px 30px rgba(168,85,247,0.6); z-index: 20; pointer-events: none; animation: popBounce 0.4s ease-out;">
-                        <div id="bhWaveBannerTitle" style="font-size: 26px; font-weight: 900; color: #E9D5FF; margin-bottom: 4px;">🔥 الموجة 1</div>
+                    <div id="bhWaveBanner" style="display: none; position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 10, 28, 0.94); border: 3px solid #A855F7; border-radius: 20px; padding: 14px 26px; text-align: center; color: white; box-shadow: 0 8px 30px rgba(168,85,247,0.6); z-index: 20; pointer-events: none; animation: popBounce 0.4s ease-out;">
+                        <div id="bhWaveBannerTitle" style="font-size: 24px; font-weight: 900; color: #E9D5FF; margin-bottom: 4px;">🔥 الموجة 1</div>
                         <div id="bhWaveBannerSub" style="font-size: 13px; font-weight: bold; color: #C084FC;">اقضِ على الحشرات واجمع الكوينز!</div>
                     </div>
 
@@ -207,10 +207,10 @@
                 <!-- CONTROLS HINT BANNER -->
                 <div style="background: #090514; height: 32px; flex-shrink: 0; padding: 0 14px; display: flex; justify-content: space-between; align-items: center; color: #94A3B8; font-size: 11px; font-weight: bold; border-top: 1.5px solid #23163E;">
                     <div>🕹️ اسحب أو انقر للتحرك (أو الأسهم / WASD)</div>
-                    <div style="color: #FCD34D;">⚡ إطلاق تلقائي</div>
+                    <div style="color: #FCD34D;">⚡ إطلاق تلقائي • ترقيات حتى لفل 30</div>
                 </div>
 
-                <!-- UPGRADE SHOP MODAL -->
+                <!-- UPGRADE SHOP MODAL (Supports 30 Levels) -->
                 <div id="bhShopModal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(9,5,20,0.88); backdrop-filter: blur(8px); z-index: 50; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box;">
                     <div style="background: #190F2E; border: 3px solid #A855F7; border-radius: 24px; width: 100%; max-width: 440px; max-height: 90vh; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(168,85,247,0.4); overflow: hidden;">
                         
@@ -219,7 +219,7 @@
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 26px;">🛒</span>
                                 <div>
-                                    <div style="font-size: 18px; font-weight: 900; color: #F3E8FF;">متجر التطويرات</div>
+                                    <div style="font-size: 18px; font-weight: 900; color: #F3E8FF;">متجر التطويرات (30 مستوى)</div>
                                     <div style="font-size: 11px; color: #C084FC;">طور سلاحك وسرعتك بالكوينز!</div>
                                 </div>
                             </div>
@@ -293,30 +293,70 @@
         const joystickContainer = document.getElementById('bhJoystickContainer');
         const joystickThumb = document.getElementById('bhJoystickThumb');
 
-        // Arena Dimensions (Virtual Arena Space 480 x 800)
+        // Dynamic Virtual Arena Dimensions (Preserves 100% 1:1 Aspect Ratio without ANY stretching)
         const ARENA_W = 480;
-        const ARENA_H = 800;
+        let ARENA_H = 800; // Recalculated dynamically in resizeCanvas
         const WALL_THICKNESS = 24;
 
-        // Obstacles (Exact match to screenshot: pink rectangular blocks / tables)
-        const OBSTACLES = [
-            { x: 50,  y: 280, w: 135, h: 56 }, // Left top table
-            { x: 310, y: 390, w: 145, h: 56 }, // Right mid table
-            { x: 390, y: 190, w: 75,  h: 70 }, // Right top block
-            { x: 0,   y: 520, w: 50,  h: 80 }, // Left edge block
-            { x: 180, y: 640, w: 135, h: 52 }  // Bottom mid table
-        ];
+        // Dynamic Obstacles (Pink tables/blocks positioned proportionally to ARENA_H)
+        let OBSTACLES = [];
+        function updateObstacles() {
+            OBSTACLES = [
+                { x: 45,  y: Math.round(ARENA_H * 0.28), w: 135, h: 56 }, // Left top table
+                { x: 300, y: Math.round(ARENA_H * 0.44), w: 145, h: 56 }, // Right mid table
+                { x: 385, y: Math.round(ARENA_H * 0.18), w: 75,  h: 70 }, // Right top block
+                { x: 0,   y: Math.round(ARENA_H * 0.58), w: 50,  h: 80 }, // Left edge block
+                { x: 175, y: Math.round(ARENA_H * 0.76), w: 135, h: 52 }  // Bottom mid table
+            ];
+        }
+        updateObstacles();
 
-        // Weapon Tiers
-        const WEAPON_TIERS = [
-            { name: 'مسدس فردي', bullets: 1, damage: 28, speed: 680, spread: 0, color: '#FFFFFF', radius: 4 },
-            { name: 'مسدس مزدوج', bullets: 2, damage: 34, speed: 720, spread: 0.16, color: '#38BDF8', radius: 4.5 },
-            { name: 'إطلاق ثلاثي متفرق', bullets: 3, damage: 42, speed: 760, spread: 0.24, color: '#A855F7', radius: 5 },
-            { name: 'بندقية البلازما المتفجرة', bullets: 3, damage: 65, speed: 820, spread: 0.20, explosive: true, color: '#F43F5E', radius: 6.5 },
-            { name: 'مدفع الهايبر نوفا الفتاك', bullets: 5, damage: 90, speed: 900, spread: 0.35, explosive: true, color: '#FBBF24', radius: 7 }
-        ];
+        // 30-Level Scalable Weapon Generator
+        function getWeaponStats(level) {
+            const l = Math.max(1, Math.min(30, level));
+            let bullets = 1;
+            let spread = 0;
+            let explosive = false;
+            let color = '#FFFFFF';
+            let radius = 4;
+            let name = 'مسدس فردي';
 
-        // Upgrades State
+            if (l === 1) {
+                name = 'مسدس فردي';
+                bullets = 1; spread = 0; color = '#FFFFFF'; radius = 4;
+            } else if (l === 2) {
+                name = 'مسدس مزدوج';
+                bullets = 2; spread = 0.14; color = '#38BDF8'; radius = 4.5;
+            } else if (l === 3) {
+                name = 'مسدس ثلاثي';
+                bullets = 3; spread = 0.22; color = '#60A5FA'; radius = 4.8;
+            } else if (l === 4) {
+                name = 'مسدس رباعي سريع';
+                bullets = 4; spread = 0.28; color = '#A855F7'; radius = 5;
+            } else if (l >= 5 && l < 8) {
+                name = `بندقية البلازما المتفجرة (مستوى ${l})`;
+                bullets = 3; spread = 0.20; explosive = true; color = '#F43F5E'; radius = 6;
+            } else if (l >= 8 && l < 12) {
+                name = `مدفع البلازما الرباعي (مستوى ${l})`;
+                bullets = 4; spread = 0.24; explosive = true; color = '#EC4899'; radius = 6.5;
+            } else if (l >= 12 && l < 18) {
+                name = `مدفع الهايبر نوفا الفتاك (مستوى ${l})`;
+                bullets = 5; spread = 0.30; explosive = true; color = '#FBBF24'; radius = 7;
+            } else if (l >= 18 && l < 25) {
+                name = `قاذف النجوم الكونية (مستوى ${l})`;
+                bullets = 6; spread = 0.35; explosive = true; color = '#34D399'; radius = 7.5;
+            } else {
+                name = `المدفع الأسطوري الخارق (مستوى ${l})`;
+                bullets = 7; spread = 0.38; explosive = true; color = '#F59E0B'; radius = 8;
+            }
+
+            const damage = Math.round(26 + (l - 1) * 8.5);
+            const speed = Math.round(680 + (l - 1) * 8);
+
+            return { name, bullets, spread, explosive, color, radius, damage, speed };
+        }
+
+        // Upgrades State (Max level 30 for all upgrades)
         let upgrades = {
             weaponLevel: 1,
             speedLevel: 1,
@@ -325,10 +365,10 @@
             magnetLevel: 1
         };
 
-        // Player State (Spawn in clear open space at x: 170, y: 550)
+        // Player State (Spawn in clear open space)
         let player = {
-            x: 170,
-            y: 550,
+            x: 160,
+            y: 530,
             radius: 18,
             angle: -Math.PI / 2,
             facingAngle: -Math.PI / 2,
@@ -342,10 +382,9 @@
             isMoving: false
         };
 
-        // Game Entities
+        // Game Entities (Note: NO enemy bullets array - bugs attack exclusively by contact)
         let bugs = [];
         let bullets = [];
-        let enemyBullets = [];
         let coins = [];
         let particles = [];
         let floatTexts = [];
@@ -372,13 +411,21 @@
         let moveVector = { x: 0, y: 0 };
         let clickTarget = null;
 
-        // Handle Canvas Sizing
+        // Handle Canvas Sizing with Mathematical Uniform 1:1 Scaling (Eliminates all stretching)
         function resizeCanvas() {
             const rect = canvasContainer.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return;
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             canvas.width = Math.round(rect.width * dpr);
             canvas.height = Math.round(rect.height * dpr);
+
+            // Compute exact arena height to preserve 1:1 square aspect ratio
+            ARENA_H = Math.round(ARENA_W * (rect.height / rect.width));
+            updateObstacles();
+
+            // Clamp player within new bounds
+            player.x = Math.max(WALL_THICKNESS + player.radius, Math.min(ARENA_W - WALL_THICKNESS - player.radius, player.x));
+            player.y = Math.max(WALL_THICKNESS + player.radius, Math.min(ARENA_H - WALL_THICKNESS - player.radius, player.y));
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
@@ -417,7 +464,7 @@
             pointerCurrent = { x: px, y: py };
             moveVector = { x: 0, y: 0 };
 
-            // Dynamic joystick position near touch point (or bottom left)
+            // Dynamic joystick position near touch point
             const joyX = Math.max(55, Math.min(rect.width - 55, px));
             const joyY = Math.max(55, Math.min(rect.height - 55, py));
             joystickContainer.style.left = `${joyX - 52}px`;
@@ -425,7 +472,7 @@
             joystickContainer.style.bottom = 'auto';
             joystickThumb.style.transform = 'translate(0px, 0px)';
 
-            // Set tap target in Arena coordinates (tap to walk)
+            // Tap target in Arena coordinates (tap to walk)
             const arenaX = (px / rect.width) * ARENA_W;
             const arenaY = (py / rect.height) * ARENA_H;
             clickTarget = { x: arenaX, y: arenaY };
@@ -474,16 +521,21 @@
         window.addEventListener('pointerup', onPointerUp);
         window.addEventListener('pointercancel', onPointerUp);
 
-        // Update Upgrades & Player Stats
+        // Update Upgrades & Player Stats (Level 1 to 30)
         function recalculateStats() {
-            player.speed = 235 + (upgrades.speedLevel - 1) * 32;
-            player.fireRate = 3.0 + (upgrades.fireRateLevel - 1) * 0.8;
+            // Speed: 235 up to 452 at level 30
+            player.speed = 235 + (upgrades.speedLevel - 1) * 7.5;
+            // Fire Rate: 3.0 up to 11.7 shots/sec at level 30
+            player.fireRate = 3.0 + (upgrades.fireRateLevel - 1) * 0.30;
+            // Max HP: 100 up to 680 at level 30
             const oldMax = player.maxHp;
-            player.maxHp = 100 + (upgrades.maxHpLevel - 1) * 35;
+            player.maxHp = 100 + (upgrades.maxHpLevel - 1) * 20;
             if (player.maxHp > oldMax) {
                 player.hp = Math.min(player.maxHp, player.hp + (player.maxHp - oldMax));
             }
-            player.magnetRadius = 85 + (upgrades.magnetLevel - 1) * 45;
+            // Magnet Radius: 85 up to 491 at level 30
+            player.magnetRadius = 85 + (upgrades.magnetLevel - 1) * 14;
+
             updateHUD();
         }
 
@@ -526,17 +578,16 @@
 
             bugsToSpawn = [];
             bugs = [];
-            enemyBullets = [];
 
             const baseCount = 5 + wave * 3;
             const hasBoss = wave % 5 === 0;
 
             for (let i = 0; i < baseCount; i++) {
                 const rand = Math.random();
-                if (wave >= 3 && rand < 0.25) {
-                    bugsToSpawn.push('spitter');
-                } else if (wave >= 2 && rand < 0.45) {
+                if (wave >= 2 && rand < 0.40) {
                     bugsToSpawn.push('tank');
+                } else if (wave >= 4 && rand < 0.65) {
+                    bugsToSpawn.push('fast_spider');
                 } else {
                     bugsToSpawn.push('spider');
                 }
@@ -556,7 +607,9 @@
             waveBannerSub.textContent = hasBoss ? 'حشرة آلية عملاقة تقترب! احذر من ضرباتها!' : `اقضِ على ${bugsToSpawn.length} حشرة واجمع الكوينز!`;
             waveBanner.style.display = 'block';
             setTimeout(() => {
-                waveBanner.style.display = 'none';
+                if (waveActive && !waveTransition) {
+                    waveBanner.style.display = 'none';
+                }
             }, 1800);
         }
 
@@ -583,14 +636,13 @@
                     x: ARENA_W / 2,
                     y: 75,
                     radius: 36,
-                    hp: 550 + currentWave * 180,
-                    maxHp: 550 + currentWave * 180,
-                    speed: 70 + currentWave * 2,
-                    damage: 30,
-                    attackTimer: 2.0,
+                    hp: 550 + currentWave * 160,
+                    maxHp: 550 + currentWave * 160,
+                    speed: 68 + currentWave * 2,
+                    damage: 28,
                     color: '#6B21A8',
                     accentColor: '#EF4444',
-                    coinReward: 35 + currentWave * 5,
+                    coinReward: 25 + currentWave * 4,
                     walkCycle: 0
                 });
             } else if (type === 'tank') {
@@ -598,42 +650,39 @@
                     type: 'tank',
                     x, y,
                     radius: 24,
-                    hp: 110 + currentWave * 30,
-                    maxHp: 110 + currentWave * 30,
-                    speed: 68 + currentWave * 3,
+                    hp: 100 + currentWave * 28,
+                    maxHp: 100 + currentWave * 28,
+                    speed: 68 + currentWave * 2.5,
                     damage: 18,
-                    attackTimer: 0,
                     color: '#4C1D95',
                     accentColor: '#FBBF24',
                     coinReward: 4,
                     walkCycle: 0
                 });
-            } else if (type === 'spitter') {
+            } else if (type === 'fast_spider') {
                 bugs.push({
-                    type: 'spitter',
+                    type: 'fast_spider',
                     x, y,
-                    radius: 17,
-                    hp: 50 + currentWave * 14,
-                    maxHp: 50 + currentWave * 14,
-                    speed: 88 + currentWave * 3,
-                    damage: 12,
-                    attackTimer: 1.5 + Math.random() * 1.5,
-                    color: '#10B981',
-                    accentColor: '#34D399',
+                    radius: 15,
+                    hp: 30 + currentWave * 8,
+                    maxHp: 30 + currentWave * 8,
+                    speed: 135 + currentWave * 4,
+                    damage: 8,
+                    color: '#C026D3',
+                    accentColor: '#F472B6',
                     coinReward: 2,
                     walkCycle: 0
                 });
             } else {
-                // Regular Spider / Beetle (Exact matching colors from screenshot)
+                // Regular Spider (Exact matching colors from screenshot)
                 bugs.push({
                     type: 'spider',
                     x, y,
                     radius: 16,
                     hp: 35 + currentWave * 10,
                     maxHp: 35 + currentWave * 10,
-                    speed: 110 + currentWave * 5,
+                    speed: 105 + currentWave * 4,
                     damage: 10,
-                    attackTimer: 0,
                     color: '#9333EA',
                     accentColor: '#FDE047',
                     coinReward: 1,
@@ -677,8 +726,8 @@
 
         // Fire Bullet
         function fireWeapon() {
-            const tier = WEAPON_TIERS[upgrades.weaponLevel - 1];
-            playSound(tier.explosive ? 'plasma' : 'laser');
+            const weapon = getWeaponStats(upgrades.weaponLevel);
+            playSound(weapon.explosive ? 'plasma' : 'laser');
 
             // Find nearest bug to aim at
             let targetAngle = player.angle;
@@ -698,8 +747,8 @@
                 player.angle = targetAngle;
             }
 
-            const count = tier.bullets;
-            const spreadAngle = tier.spread;
+            const count = weapon.bullets;
+            const spreadAngle = weapon.spread;
             const startAngle = targetAngle - (spreadAngle * (count - 1)) / 2;
 
             for (let i = 0; i < count; i++) {
@@ -707,12 +756,12 @@
                 bullets.push({
                     x: player.x + Math.cos(targetAngle) * (player.radius + 6),
                     y: player.y + Math.sin(targetAngle) * (player.radius + 6),
-                    vx: Math.cos(bAngle) * tier.speed,
-                    vy: Math.sin(bAngle) * tier.speed,
-                    radius: tier.radius,
-                    damage: tier.damage,
-                    color: tier.color,
-                    explosive: tier.explosive || false,
+                    vx: Math.cos(bAngle) * weapon.speed,
+                    vy: Math.sin(bAngle) * weapon.speed,
+                    radius: weapon.radius,
+                    damage: weapon.damage,
+                    color: weapon.color,
+                    explosive: weapon.explosive || false,
                     life: 1.3
                 });
             }
@@ -720,45 +769,7 @@
             // Muzzle flash particles
             const mx = player.x + Math.cos(targetAngle) * (player.radius + 8);
             const my = player.y + Math.sin(targetAngle) * (player.radius + 8);
-            spawnParticles(mx, my, tier.color, 4, 110);
-        }
-
-        // Enemy Attack Logic
-        function enemyAttack(bug, dt) {
-            bug.attackTimer -= dt;
-            if (bug.attackTimer <= 0) {
-                if (bug.type === 'spitter') {
-                    bug.attackTimer = 2.4;
-                    const angle = Math.atan2(player.y - bug.y, player.x - bug.x);
-                    enemyBullets.push({
-                        x: bug.x + Math.cos(angle) * (bug.radius + 4),
-                        y: bug.y + Math.sin(angle) * (bug.radius + 4),
-                        vx: Math.cos(angle) * 260,
-                        vy: Math.sin(angle) * 260,
-                        radius: 5.5,
-                        damage: bug.damage,
-                        color: '#10B981',
-                        life: 2.5
-                    });
-                    playSound('hit');
-                } else if (bug.type === 'boss') {
-                    bug.attackTimer = 2.8;
-                    for (let a = 0; a < 8; a++) {
-                        const angle = (a * Math.PI) / 4;
-                        enemyBullets.push({
-                            x: bug.x,
-                            y: bug.y,
-                            vx: Math.cos(angle) * 210,
-                            vy: Math.sin(angle) * 210,
-                            radius: 6,
-                            damage: 18,
-                            color: '#F43F5E',
-                            life: 2.8
-                        });
-                    }
-                    playSound('plasma');
-                }
-            }
+            spawnParticles(mx, my, weapon.color, 4, 110);
         }
 
         // Main Update Loop
@@ -920,59 +931,25 @@
                 }
             }
 
-            // --- 4. Update Enemy Projectiles ---
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                const eb = enemyBullets[i];
-                eb.x += eb.vx * dt;
-                eb.y += eb.vy * dt;
-                eb.life -= dt;
-
-                // Collision with player
-                const pDist = Math.hypot(eb.x - player.x, eb.y - player.y);
-                if (pDist < eb.radius + player.radius) {
-                    damagePlayer(eb.damage);
-                    spawnParticles(eb.x, eb.y, '#EF4444', 6, 120);
-                    enemyBullets.splice(i, 1);
-                    continue;
-                }
-
-                // Obstacle collision
-                let hitObs = false;
-                for (const box of OBSTACLES) {
-                    if (eb.x > box.x && eb.x < box.x + box.w && eb.y > box.y && eb.y < box.y + box.h) {
-                        hitObs = true;
-                        break;
-                    }
-                }
-
-                if (hitObs || eb.life <= 0 || eb.x < 0 || eb.x > ARENA_W || eb.y < 0 || eb.y > ARENA_H) {
-                    enemyBullets.splice(i, 1);
-                }
-            }
-
-            // --- 5. Spawn Queue Handler ---
+            // --- 4. Spawn Queue Handler ---
             if (waveActive && bugsToSpawn.length > 0) {
                 waveSpawnTimer -= dt;
                 if (waveSpawnTimer <= 0) {
                     const nextType = bugsToSpawn.shift();
                     spawnBug(nextType);
-                    waveSpawnTimer = Math.max(0.5, 1.4 - currentWave * 0.05);
+                    waveSpawnTimer = Math.max(0.45, 1.3 - currentWave * 0.04);
                 }
             }
 
-            // --- 6. Update Bugs (AI, movement, collisions) ---
+            // --- 5. Update Bugs (AI, movement, collisions) - BUGS DO NOT SHOOT, ONLY ATTACK ON CONTACT ---
             bugs.forEach(bug => {
                 bug.walkCycle += dt * 10;
                 const angleToPlayer = Math.atan2(player.y - bug.y, player.x - bug.x);
                 const distToPlayer = Math.hypot(player.x - bug.x, player.y - bug.y);
 
-                if (bug.type === 'spitter' && distToPlayer < 200) {
-                    bug.x -= Math.cos(angleToPlayer) * bug.speed * dt * 0.7;
-                    bug.y -= Math.sin(angleToPlayer) * bug.speed * dt * 0.7;
-                } else {
-                    bug.x += Math.cos(angleToPlayer) * bug.speed * dt;
-                    bug.y += Math.sin(angleToPlayer) * bug.speed * dt;
-                }
+                // All bugs actively pursue player
+                bug.x += Math.cos(angleToPlayer) * bug.speed * dt;
+                bug.y += Math.sin(angleToPlayer) * bug.speed * dt;
 
                 // Obstacle collision for bug
                 OBSTACLES.forEach(box => {
@@ -983,18 +960,13 @@
                     }
                 });
 
-                // Attack logic
-                if (bug.type === 'spitter' || bug.type === 'boss') {
-                    enemyAttack(bug, dt);
-                }
-
-                // Melee contact with player
+                // Melee contact damage to player
                 if (distToPlayer < bug.radius + player.radius) {
                     damagePlayer(bug.damage * dt * 1.8);
                 }
             });
 
-            // --- 7. Update Coins (Physics, magnetic pull, collection) ---
+            // --- 6. Update Coins (Physics, magnetic pull, collection) ---
             for (let i = coins.length - 1; i >= 0; i--) {
                 const c = coins[i];
                 c.rotation += dt * 5;
@@ -1004,7 +976,7 @@
                 // Magnetic Attraction
                 if (dist < player.magnetRadius) {
                     const angle = Math.atan2(player.y - c.y, player.x - c.x);
-                    const pullSpeed = 380 + (player.magnetRadius - dist) * 4;
+                    const pullSpeed = 400 + (player.magnetRadius - dist) * 4.5;
                     c.vx += Math.cos(angle) * pullSpeed * dt;
                     c.vy += Math.sin(angle) * pullSpeed * dt;
                 }
@@ -1013,6 +985,10 @@
                 c.y += c.vy * dt;
                 c.vx *= 0.92;
                 c.vy *= 0.92;
+
+                // Keep coins inside walls
+                c.x = Math.max(WALL_THICKNESS + 12, Math.min(ARENA_W - WALL_THICKNESS - 12, c.x));
+                c.y = Math.max(WALL_THICKNESS + 12, Math.min(ARENA_H - WALL_THICKNESS - 12, c.y));
 
                 // Collection
                 if (dist < player.radius + 14) {
@@ -1025,7 +1001,7 @@
                 }
             }
 
-            // --- 8. Update Particles ---
+            // --- 7. Update Particles ---
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx * dt;
@@ -1036,7 +1012,7 @@
                 }
             }
 
-            // --- 9. Update Floating Texts ---
+            // --- 8. Update Floating Texts ---
             for (let i = floatTexts.length - 1; i >= 0; i--) {
                 const ft = floatTexts[i];
                 ft.y += ft.vy * dt;
@@ -1046,22 +1022,33 @@
                 }
             }
 
-            // --- 10. Wave Completion Check ---
-            if (waveActive && bugsToSpawn.length === 0 && bugs.length === 0 && !waveTransition) {
-                waveTransition = true;
-                waveActive = false;
-                playSound('wave_clear');
+            // --- 9. Wave Completion Gate: DO NOT MOVE TO NEXT WAVE UNTIL ALL COINS ARE COLLECTED! ---
+            const allBugsDead = waveActive && bugsToSpawn.length === 0 && bugs.length === 0;
 
-                const bonus = 5 + currentWave * 2;
-                totalCoins += bonus;
-                updateHUD();
-                spawnFloatingText(ARENA_W / 2, ARENA_H / 2 - 30, `🎉 اكتملت الموجة! مكافأة +${bonus} 🪙`, '#A855F7', 18);
+            if (allBugsDead && !waveTransition) {
+                if (coins.length > 0) {
+                    // All bugs killed, but coins remain on floor!
+                    waveBannerTitle.textContent = `🪙 اجمع الكوينز!`;
+                    waveBannerSub.textContent = `اجمع كل الكوينز (${coins.length} متبقية) للانتقال للموجة التالية!`;
+                    waveBanner.style.display = 'block';
+                } else {
+                    // All bugs dead AND all coins collected from screen!
+                    waveTransition = true;
+                    waveActive = false;
+                    waveBanner.style.display = 'none';
+                    playSound('wave_clear');
 
-                setTimeout(() => {
-                    if (gameActive) {
-                        openShop();
-                    }
-                }, 1200);
+                    const bonus = 5 + currentWave * 2;
+                    totalCoins += bonus;
+                    updateHUD();
+                    spawnFloatingText(ARENA_W / 2, ARENA_H / 2 - 30, `🎉 اكتملت الموجة! مكافأة +${bonus} 🪙`, '#A855F7', 18);
+
+                    setTimeout(() => {
+                        if (gameActive) {
+                            openShop();
+                        }
+                    }, 1100);
+                }
             }
         }
 
@@ -1087,10 +1074,15 @@
             const dropCount = bug.coinReward || 1;
             for (let k = 0; k < dropCount; k++) {
                 const angle = Math.random() * Math.PI * 2;
-                const spd = 40 + Math.random() * 80;
+                const spd = 35 + Math.random() * 70;
+                let cx = bug.x + Math.cos(angle) * 16;
+                let cy = bug.y + Math.sin(angle) * 16;
+                cx = Math.max(WALL_THICKNESS + 20, Math.min(ARENA_W - WALL_THICKNESS - 20, cx));
+                cy = Math.max(WALL_THICKNESS + 20, Math.min(ARENA_H - WALL_THICKNESS - 20, cy));
+
                 coins.push({
-                    x: bug.x,
-                    y: bug.y,
+                    x: cx,
+                    y: cy,
                     vx: Math.cos(angle) * spd,
                     vy: Math.sin(angle) * spd,
                     value: 1,
@@ -1111,7 +1103,7 @@
         // RENDER PIPELINE (Exact match to screenshot)
         // ==========================================
         function drawArena() {
-            // Checkered Purple / Deep Indigo Floor Tiles
+            // Checkered Purple / Deep Indigo Floor Tiles (Perfect Squares)
             const tileSize = 44;
             const cols = Math.ceil(ARENA_W / tileSize);
             const rows = Math.ceil(ARENA_H / tileSize);
@@ -1124,7 +1116,7 @@
                 }
             }
 
-            // Top-down Ambient Wall Borders (matching screenshot perimeter walls)
+            // Top-down Ambient Wall Borders
             ctx.fillStyle = '#221442';
             ctx.fillRect(0, 0, ARENA_W, WALL_THICKNESS); // Top
             ctx.fillRect(0, ARENA_H - WALL_THICKNESS, ARENA_W, WALL_THICKNESS); // Bottom
@@ -1226,10 +1218,10 @@
             ctx.fill();
 
             // Blaster Weapon
-            const tier = WEAPON_TIERS[upgrades.weaponLevel - 1];
+            const weapon = getWeaponStats(upgrades.weaponLevel);
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(10, 6 - bob * 0.3, 16, 5);
-            ctx.fillStyle = tier.color;
+            ctx.fillStyle = weapon.color;
             ctx.fillRect(18, 5 - bob * 0.3, 8, 7);
 
             ctx.restore();
@@ -1354,27 +1346,20 @@
             ctx.restore();
         }
 
-        // Main Render Loop
+        // Main Render Loop with Uniform 1:1 Scale
         function render() {
             // Clean frame reset
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Scale virtual arena coordinates (0..ARENA_W, 0..ARENA_H) to real canvas pixels
-            ctx.setTransform(canvas.width / ARENA_W, 0, 0, canvas.height / ARENA_H, 0, 0);
+            // Uniform scale factor in X and Y (strictly equal, ZERO stretching)
+            const uniformScale = canvas.width / ARENA_W;
+            ctx.setTransform(uniformScale, 0, 0, uniformScale, 0, 0);
 
             drawArena();
 
             // Draw Coins
             coins.forEach(drawCoin);
-
-            // Draw Enemy Bullets
-            enemyBullets.forEach(eb => {
-                ctx.fillStyle = eb.color;
-                ctx.beginPath();
-                ctx.arc(eb.x, eb.y, eb.radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
 
             // Draw Bugs
             bugs.forEach(drawBug);
@@ -1434,59 +1419,62 @@
         }
 
         // ==========================================
-        // UPGRADE SHOP SYSTEM
+        // UPGRADE SHOP SYSTEM (Up to Level 30!)
         // ==========================================
         function renderShopItems() {
             shopItems.innerHTML = '';
+
+            const nextWeapon = getWeaponStats(Math.min(30, upgrades.weaponLevel + 1));
+            const currentWeapon = getWeaponStats(upgrades.weaponLevel);
 
             const items = [
                 {
                     id: 'weapon',
                     title: 'ترقية السلاح 🔫',
-                    desc: WEAPON_TIERS[Math.min(WEAPON_TIERS.length - 1, upgrades.weaponLevel)].name,
+                    desc: upgrades.weaponLevel >= 30 ? 'تم الوصول للحد الأقصى (المدفع الأسطوري 30)' : `التالي: ${nextWeapon.name} (ضرر: ${nextWeapon.damage})`,
                     level: upgrades.weaponLevel,
-                    maxLevel: WEAPON_TIERS.length,
-                    cost: upgrades.weaponLevel * 15,
+                    maxLevel: 30,
+                    cost: Math.round(10 + upgrades.weaponLevel * 4.5),
                     icon: '🔫',
                     color: '#38BDF8'
                 },
                 {
                     id: 'speed',
                     title: 'سرعة البطل ⚡',
-                    desc: `زيادة السرعة إلى ${Math.round(235 + upgrades.speedLevel * 32)} وحدة`,
+                    desc: `زيادة السرعة إلى ${Math.round(235 + upgrades.speedLevel * 7.5)} وحدة`,
                     level: upgrades.speedLevel,
-                    maxLevel: 8,
-                    cost: 8 + upgrades.speedLevel * 6,
+                    maxLevel: 30,
+                    cost: Math.round(6 + upgrades.speedLevel * 3.2),
                     icon: '👟',
                     color: '#FBBF24'
                 },
                 {
                     id: 'fireRate',
                     title: 'معدل إطلاق النار 🔥',
-                    desc: 'إطلاق رصاص أسرع على الحشرات',
+                    desc: `إطلاق رصاص أسرع (${(3.0 + upgrades.fireRateLevel * 0.30).toFixed(1)} طلقة/ثانية)`,
                     level: upgrades.fireRateLevel,
-                    maxLevel: 6,
-                    cost: 10 + upgrades.fireRateLevel * 8,
+                    maxLevel: 30,
+                    cost: Math.round(8 + upgrades.fireRateLevel * 3.5),
                     icon: '⚡',
                     color: '#EF4444'
                 },
                 {
                     id: 'maxHp',
                     title: 'نقاط الحياة والشفاء ❤️',
-                    desc: '+35 نقطة حياة مع استعادة كامل الصحة',
+                    desc: `+20 نقطة حياة (إجمالي: ${100 + upgrades.maxHpLevel * 20}) واستعادة الصحة كاملة`,
                     level: upgrades.maxHpLevel,
-                    maxLevel: 6,
-                    cost: 12 + upgrades.maxHpLevel * 8,
+                    maxLevel: 30,
+                    cost: Math.round(7 + upgrades.maxHpLevel * 3.2),
                     icon: '💖',
                     color: '#EC4899'
                 },
                 {
                     id: 'magnet',
                     title: 'مغناطيس الكوينز 🧲',
-                    desc: 'جذب الكوينز الذهبية من مسافات أبعد',
+                    desc: `جذب الكوينز من مسافة أوسع (${85 + upgrades.magnetLevel * 14} بكسل)`,
                     level: upgrades.magnetLevel,
-                    maxLevel: 5,
-                    cost: 8 + upgrades.magnetLevel * 6,
+                    maxLevel: 30,
+                    cost: Math.round(5 + upgrades.magnetLevel * 2.8),
                     icon: '🧲',
                     color: '#A855F7'
                 }
@@ -1513,8 +1501,11 @@
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 26px;">${item.icon}</span>
                         <div>
-                            <div style="font-size: 14.5px; font-weight: 900; color: #FFFFFF;">${item.title} (مستوى ${item.level})</div>
-                            <div style="font-size: 11px; color: #CBD5E1;">${item.desc}</div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 14.5px; font-weight: 900; color: #FFFFFF;">${item.title}</span>
+                                <span style="background: ${item.color}33; color: ${item.color}; border: 1px solid ${item.color}; font-size: 11px; font-weight: 900; padding: 1px 7px; border-radius: 8px;">لفل ${item.level}/30</span>
+                            </div>
+                            <div style="font-size: 11px; color: #CBD5E1; margin-top: 2px;">${item.desc}</div>
                         </div>
                     </div>
                     <button class="bh-buy-btn" style="
@@ -1550,13 +1541,13 @@
             totalCoins -= cost;
             playSound('upgrade');
 
-            if (type === 'weapon') upgrades.weaponLevel++;
-            else if (type === 'speed') upgrades.speedLevel++;
-            else if (type === 'fireRate') upgrades.fireRateLevel++;
-            else if (type === 'maxHp') {
+            if (type === 'weapon' && upgrades.weaponLevel < 30) upgrades.weaponLevel++;
+            else if (type === 'speed' && upgrades.speedLevel < 30) upgrades.speedLevel++;
+            else if (type === 'fireRate' && upgrades.fireRateLevel < 30) upgrades.fireRateLevel++;
+            else if (type === 'maxHp' && upgrades.maxHpLevel < 30) {
                 upgrades.maxHpLevel++;
                 player.hp = player.maxHp;
-            } else if (type === 'magnet') upgrades.magnetLevel++;
+            } else if (type === 'magnet' && upgrades.magnetLevel < 30) upgrades.magnetLevel++;
 
             recalculateStats();
             renderShopItems();
@@ -1585,12 +1576,11 @@
         // Restart Game
         restartBtn.addEventListener('click', () => {
             gameOverModal.style.display = 'none';
-            player.x = 170;
-            player.y = 550;
+            player.x = 160;
+            player.y = Math.round(ARENA_H * 0.66);
             player.hp = player.maxHp;
             bugs = [];
             bullets = [];
-            enemyBullets = [];
             coins = [];
             particles = [];
             floatTexts = [];
