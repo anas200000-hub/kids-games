@@ -103,7 +103,7 @@
     <script src="js/games/game-2048.js?v=1"></script>
     <script src="js/games/walkers-attack.js?v=1"></script>
     <script src="js/games/meow-doku.js?v=11"></script>
-    <script src="js/games/bug-hunter.js?v=9"></script>
+    <script src="js/games/bug-hunter.js?v=10"></script>
  
     <!-- Main Coordinator Script -->
     <script src="js/main.js?v=58"></script>
@@ -111,6 +111,10 @@
     <!-- Register PWA Service Worker & Debug Errors -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
+            if (message === 'Script error.' && (!source || lineno === 0)) {
+                console.warn("Muted generic Script error with no stack");
+                return true;
+            }
             alert("خطأ برمجي (JS Error):\n" + message + "\nالملف: " + source + "\nالسطر: " + lineno);
             return false;
         };

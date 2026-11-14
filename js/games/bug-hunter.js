@@ -1027,7 +1027,6 @@
                 if (coins.length === 0) {
                     waveTransition = true;
                     waveActive = false;
-                    if (waveBanner) waveBanner.style.display = 'none';
                     playSound('wave_clear');
 
                     const bonus = 5 + currentWave * 2;
